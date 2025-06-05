@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,7 +11,12 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-// Send any text message to the bot after the bot has been started
+// TODO: Заменить эти временные хранилища на нормальную бд
+// var userStates = make(map[int64]shop.UserState)
+// var currentPurchaseData = make(map[int64]*shop.Purchase)
+// var purchases = make([]shop.Purchase, 0)
+// Хранилище покупок
+
 
 func main() {
 	// Config Loading
@@ -42,28 +46,5 @@ func main() {
 }
 
 func defaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	if update.Message == nil {
-		return
-	}
-	kb := models.ReplyKeyboardMarkup{
-		Keyboard:              [][]models.KeyboardButton{{models.KeyboardButton{Text: "hide"}}},
-		IsPersistent:          false,
-		ResizeKeyboard:        true,
-		OneTimeKeyboard:       false,
-		InputFieldPlaceholder: "",
-		Selective:             false,
-	}
-	_, errSend := b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text: `Приветствую! Я позволю тебе хранить список покупок.
-		Ты можешь выбрать для них категорию, приоритет и цену.
-		Получить список покупок, отфильтровать их. И конечно же посмотреть список своих больших свершений.`,
-		ParseMode:   models.ParseModeHTML,
-		ReplyMarkup: &kb,
-	})
-
-	if errSend != nil {
-		fmt.Printf("error sending message: %v\n", errSend)
-		return
-	}
+	
 }

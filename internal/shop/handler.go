@@ -11,11 +11,11 @@ import (
 type UserState int
 
 const (
-	WaitingForName UserState = iota
-	WaitingForPrice
-	WaitingForCategory
-	WaitingForPriority
-	Confirming
+    StateStart UserState = iota
+    StateWaitingForName
+    StateWaitingForPrice
+    StateWaitingForCategory
+    StateWaitingForPriority
 )
 
 // TODO:

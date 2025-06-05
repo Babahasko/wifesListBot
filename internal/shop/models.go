@@ -6,8 +6,8 @@ import "time"
 type Purchase struct {
     Name string
 	Category string
-	Price int32
-	Priority int16
+	Price float64
+	Priority int
 	DateAdded time.Time
 	IsCompleted bool
 }
