@@ -17,9 +17,6 @@ import (
 // var currentPurchaseData = make(map[int64]*shop.Purchase)
 // var purchases = make([]shop.Purchase, 0)
 
-// Keyboards
-
-var AddPurchaseKeyboard *reply.ReplyKeyboard
 
 func main() {
 	// Config Loading
@@ -36,9 +33,6 @@ func main() {
 	}
 
 	b, err := bot.New(conf.BotToken, opts...)
-
-    // Init keyboards
-    initReplyKeyboard(b)
 
     //Register handlers
     b.RegisterHandler(bot.HandlerTypeMessageText, "/replykb", bot.MatchTypeExact, handlerReplyKeyboard)
@@ -60,8 +54,8 @@ func defaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	
 }
 
-func initReplyKeyboard(b *bot.Bot) {
-	AddPurchaseKeyboard = reply.New(
+func initReplyKeyboard(b *bot.Bot) *reply.ReplyKeyboard{
+	AddPurchaseKeyboard := reply.New(
 		reply.WithPrefix("reply_keyboard"),
 		reply.IsSelective(),
 		reply.IsOneTimeKeyboard(),
@@ -69,13 +63,15 @@ func initReplyKeyboard(b *bot.Bot) {
 		Button("Button", b, bot.MatchTypeExact, onReplyKeyboardSelect).
 		Row().
 		Button("Cancel", b, bot.MatchTypeExact, onReplyKeyboardSelect)
+        return AddPurchaseKeyboard
 }
 
 func handlerReplyKeyboard(ctx context.Context, b *bot.Bot, update *models.Update) {
+    kb := initReplyKeyboard(b)
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
 		Text:        "Select example command from reply keyboard:",
-		ReplyMarkup: AddPurchaseKeyboard,
+		ReplyMarkup: kb,
 	})
 }
 
