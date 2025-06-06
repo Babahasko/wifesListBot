@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"shopping_bot/configs"
+	"shopping_bot/internal/shop"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-    "github.com/go-telegram/ui/keyboard/reply"
 )
 
 // TODO: Заменить эти временные хранилища на нормальную бд
@@ -54,30 +54,11 @@ func defaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	
 }
 
-func initReplyKeyboard(b *bot.Bot) *reply.ReplyKeyboard{
-	AddPurchaseKeyboard := reply.New(
-		reply.WithPrefix("reply_keyboard"),
-		reply.IsSelective(),
-		reply.IsOneTimeKeyboard(),
-	).
-		Button("Button", b, bot.MatchTypeExact, onReplyKeyboardSelect).
-		Row().
-		Button("Cancel", b, bot.MatchTypeExact, onReplyKeyboardSelect)
-        return AddPurchaseKeyboard
-}
-
 func handlerReplyKeyboard(ctx context.Context, b *bot.Bot, update *models.Update) {
-    kb := initReplyKeyboard(b)
+    kb := shop.InitPurchaseKB(b)
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
 		Text:        "Select example command from reply keyboard:",
 		ReplyMarkup: kb,
-	})
-}
-
-func onReplyKeyboardSelect(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   "You selected: " + string(update.Message.Text),
 	})
 }
