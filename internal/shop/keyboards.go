@@ -13,16 +13,16 @@ func InitPurchaseKB(b *bot.Bot) *reply.ReplyKeyboard{
 		reply.WithPrefix("reply_keyboard"),
 		reply.IsSelective(),
 		reply.IsOneTimeKeyboard(),
+		reply.ResizableKeyboard(),
 	).
-		Button("Button", b, bot.MatchTypeExact, onReplyKeyboardSelect).
-		Row().
-		Button("Cancel", b, bot.MatchTypeExact, onReplyKeyboardSelect)
+		Button("Добавить покупку", b, bot.MatchTypeExact, onReplyKeyboardSelect).
+		Button("Отмена", b, bot.MatchTypeExact, onReplyKeyboardSelect)
         return AddPurchaseKeyboard
 }
 
 func onReplyKeyboardSelect(ctx context.Context, b *bot.Bot, update *models.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
-		Text:   "You selected: " + string(update.Message.Text),
+		Text:   "Здесь будет обработка действия: " + string(update.Message.Text),
 	})
 }
