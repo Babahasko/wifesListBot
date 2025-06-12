@@ -2,6 +2,7 @@ package main
 
 import (
 	"shopping_bot/configs"
+	"shopping_bot/internal/shop"
 	"shopping_bot/pkg/logger"
 	"time"
 
@@ -39,6 +40,9 @@ func main() {
 		MaxRoutines: ext.DefaultMaxRoutines,
 	})
 	updater := ext.NewUpdater(dispatcher, nil)
+
+	// Handlers
+	shop.NewShopHandler(dispatcher)
 	
 	// Start receiving updates.
 	err = updater.StartPolling(b, &ext.PollingOpts{
@@ -50,11 +54,11 @@ func main() {
 			},
 		},
 	})
-	
+
 	if err != nil {
 		panic("failed to start polling: " + err.Error())
 	}
-	sugar.Infof("%s has been started...\n", b.User.Username)
+	sugar.Infof("%s has been started...", b.User.Username)
 
 	// Idle, to keep updates coming in, and avoid bot stopping.
 	updater.Idle()
