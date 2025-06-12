@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"shopping_bot/configs"
+	"shopping_bot/pkg/logger"
 )
 
 // TODO: Заменить эти временные хранилища на нормальную бд
@@ -11,7 +11,14 @@ import (
 // var purchases = make([]shop.Purchase, 0)
 
 func main() {
+	// Setup logger
+	sugar := logger.NewSugarLogger()
+	defer sugar.Sync()
+
+	sugar.Infow("Starting the server")
+
 	// Config Loading
 	conf := configs.LoadConfig()
-	fmt.Println(conf.BotToken)
+	sugar.Infow("Load configs",
+		"token", conf.BotToken)
 }
