@@ -16,21 +16,21 @@ import (
 // var purchases = make([]shop.Purchase, 0)
 
 func main() {
-	// Setup logger
+	// == Setup LOGGER ==
 	sugar := logger.NewSugarLogger()
 	defer sugar.Sync()
 
-	// Config Loading
+	// == Load CONFIGS ==
 	conf := configs.LoadConfig()
 	sugar.Infow("Load configs")
 
-	// Setup telegram bot
+	// == Setup TELEGRAM BOT ==
 	b, err := gotgbot.NewBot(conf.BotToken, nil)
 	if err != nil {
 		panic("failed to create new bot: " + err.Error())
 	}
 
-	// Create updater and dispatcher.
+	// сreate updater and dispatcher.
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		// If an error is returned by a handler, log it and continue going.
 		Error: func(b *gotgbot.Bot, ctx *ext.Context, err error) ext.DispatcherAction {
