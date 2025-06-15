@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"shopping_bot/configs"
 	"shopping_bot/internal/shop"
 	"shopping_bot/pkg/logger"
+	"shopping_bot/pkg/middleware"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -24,10 +26,20 @@ func main() {
 	conf := configs.LoadConfig()
 	sugar.Infow("Load configs")
 
+	// == Middlewares ==
+	middlewareChain := middleware.Chain(
+		middleware.NewLoggingMiddleware(sugar),
+		middleware.NewErrorMiddleware(sugar),
+	)
+
 	// == Setup TELEGRAM BOT ==
-	b, err := gotgbot.NewBot(conf.BotToken, nil)
+	b, err := gotgbot.NewBot(conf.BotToken, &gotgbot.BotOpts{
+		BotClient: middleware.NewMiddlewareClient(middlewareChain),
+	})
+
 	if err != nil {
-		panic("failed to create new bot: " + err.Error())
+		// panic("failed to create new bot: " + err.Error())
+		sugar.Fatal(errors.New("invalid token"), err)
 	}
 
 	// сreate updater and dispatcher.
