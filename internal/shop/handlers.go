@@ -2,12 +2,14 @@ package shop
 
 import (
 	"fmt"
-	"html"
+	// "html"
+	"log"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/conversation"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/callbackquery"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
 )
 
@@ -25,7 +27,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase)},
 		map[string][]ext.Handler{
-			CATEGORY: {handlers.NewMessage(isCategory, category)},
+			CATEGORY: {handlers.NewCallback(callbackquery.Prefix("cat_"), category)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), cancel)},
@@ -46,18 +48,16 @@ func (handler *ShopHandler) Start(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) AddPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Пошла возня добавления покупки", &gotgbot.SendMessageOpts{
-		ReplyMarkup: getShortMenueKeyboard(),
+	categories := getUserCategories(123)
+	catKeyboard := getCategoriesKeyboard(categories)
+
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Выберите категорию", &gotgbot.SendMessageOpts{
+		ReplyMarkup: catKeyboard,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to send menue message: %w", err)
 	}
 	return handlers.NextConversationState(CATEGORY)
-}
-
-//TODO: 1. Refactor IsCategory function
-func isCategory(msg *gotgbot.Message) bool {
-	return message.Text(msg) && !message.Command(msg)
 }
 
 func cancel(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -72,13 +72,38 @@ func cancel(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func category(b *gotgbot.Bot, ctx *ext.Context) error {
-	inputCategory := ctx.EffectiveMessage.Text
-	_, err := ctx.EffectiveMessage.Reply(b, fmt.Sprintf("Отлично, вы выбрали категорию %s!\n\n", html.EscapeString(inputCategory)), &gotgbot.SendMessageOpts{
-		ParseMode: "html",
+	log.Println("зашли в обработчик категории")
+	cb := ctx.Update.CallbackQuery
+	text := ctx.Update.CallbackQuery.Data
+	_, err := cb.Answer(b,  &gotgbot.AnswerCallbackQueryOpts{
+		Text: text,
+		ShowAlert: false,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to send category message: %w", err)
+		return fmt.Errorf("failed to send category message %w", err)
 	}
+	_, _, err = cb.Message.EditText(b, "Введите название", &gotgbot.EditMessageTextOpts{
+		ParseMode: "html",
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send add name message %w", err)
+	}
+
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "", &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMenueKeyboard(),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send keyboard %w", err)
+	}
+	
+	// _, err := ctx.EffectiveMessage.Reply(b, fmt.Sprintf("Отлично, вы выбрали категорию %s!\n\n", html.EscapeString(inputCategory)), &gotgbot.SendMessageOpts{
+	// 	ParseMode: "html",
+	// })
+	// if err != nil {
+	// 	return fmt.Errorf("failed to send category message: %w", err)
+	// }
 	return handlers.EndConversation()
 }
 

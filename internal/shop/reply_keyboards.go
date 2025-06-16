@@ -13,6 +13,7 @@ const (
 
 func getMainMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
 	return &gotgbot.ReplyKeyboardMarkup{
+		OneTimeKeyboard: true,
 		ResizeKeyboard: true,
 		Keyboard: [][]gotgbot.KeyboardButton{
 			{
