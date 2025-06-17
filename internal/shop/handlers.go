@@ -20,6 +20,9 @@ type ShopHandler struct {
 
 const (
 	CATEGORY = "category"
+	NAME = "purchase_name"
+	PRIORITY = "priority"
+	PRICE = "price"
 )
 
 func NewShopHandler(router *ext.Dispatcher) {
@@ -38,6 +41,9 @@ func NewShopHandler(router *ext.Dispatcher) {
 		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.addPurchase)},
 		map[string][]ext.Handler{
 			CATEGORY: {handlers.NewCallback(callbackquery.Prefix("cat_"), handler.category)},
+			NAME: {handlers.NewMessage(message.Text, handler.addName)},
+			PRIORITY: {handlers.NewMessage(message.Text, handler.addPriority)},
+			PRICE: {handlers.NewMessage(message.Text, handler.addPrice)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
@@ -73,16 +79,7 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 	return handlers.NextConversationState(CATEGORY)
 }
 
-func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Жаль, что вы прервались!", &gotgbot.SendMessageOpts{
-		ParseMode: "html",
-		ReplyMarkup: getMainMenueKeyboard(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send cancel message: %w", err)
-	}
-	return handlers.EndConversation()
-}
+
 
 func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
@@ -120,7 +117,7 @@ func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to delete cb message %w", err)
 	}
 
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название", &gotgbot.SendMessageOpts{
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, fmt.Sprintf("Выбрана категория: %s. Введите название покупки", categoryData.Name), &gotgbot.SendMessageOpts{
 		ReplyMarkup: getMenueKeyboard(),
 	})
 
@@ -129,6 +126,54 @@ func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 	
 	// }
+	return handlers.NextConversationState(NAME)
+}
+
+func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
+	purchaseName := ctx.EffectiveMessage.Text
+	handler.Client.setUserData(ctx, "purchaseName", purchaseName)
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите приоритет от 1 до 10", &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMenueKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send priority message: %w", err)
+	}
+	return handlers.NextConversationState(PRIORITY)
+}
+
+func (handler *ShopHandler) addPriority(b *gotgbot.Bot, ctx *ext.Context) error {
+	purchasePriority := ctx.EffectiveMessage.Text
+	handler.Client.setUserData(ctx, "purchasePriority", purchasePriority)
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите цену покупки", &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMenueKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send price message: %w", err)
+	}
+	return handlers.NextConversationState(PRICE)
+}
+
+func (handler *ShopHandler) addPrice(b *gotgbot.Bot, ctx *ext.Context) error {
+	purchasePrice := ctx.EffectiveMessage.Text
+	handler.Client.setUserData(ctx, "purchasePrice", purchasePrice)
+	name, _ := handler.Client.getUserData(ctx, "purchaseName")
+	priority, _ := handler.Client.getUserData(ctx, "purchasePriority")
+	price, _ := handler.Client.getUserData(ctx, "purchasePrice")
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, fmt.Sprintf("Итоговая покупка = название: %v, приоритет: %v, цена: %v.",name, priority, price), nil)
+	if err != nil {
+		return fmt.Errorf("failed to send price message: %w", err)
+	}
 	return handlers.EndConversation()
 }
 
+
+func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Жаль, что вы прервались!", &gotgbot.SendMessageOpts{
+		ParseMode: "html",
+		ReplyMarkup: getMainMenueKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send cancel message: %w", err)
+	}
+	return handlers.EndConversation()
+}
