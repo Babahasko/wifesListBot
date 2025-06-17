@@ -16,17 +16,17 @@ import (
 
 func main() {
 	// == Setup LOGGER ==
-	sugar := logger.NewSugarLogger()
-	defer sugar.Sync()
+	logger.InitLogger()
+	defer logger.Sugar.Sync()
 
 	// == Load CONFIGS ==
 	conf := configs.LoadConfig()
-	sugar.Infow("Load configs")
+	logger.Sugar.Infow("Load configs")
 
 	// == Middlewares ==
 	middlewareChain := middleware.Chain(
-		middleware.NewLoggingMiddleware(sugar),
-		middleware.NewErrorMiddleware(sugar),
+		middleware.NewLoggingMiddleware(logger.Sugar),
+		middleware.NewErrorMiddleware(logger.Sugar),
 	)
 
 	// == Setup TELEGRAM BOT ==
@@ -36,14 +36,14 @@ func main() {
 
 	if err != nil {
 		// panic("failed to create new bot: " + err.Error())
-		sugar.Fatal(errors.New("invalid token"), err)
+		logger.Sugar.Fatal(errors.New("invalid token"), err)
 	}
 
 	// сreate updater and dispatcher.
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		// If an error is returned by a handler, log it and continue going.
 		Error: func(b *gotgbot.Bot, ctx *ext.Context, err error) ext.DispatcherAction {
-			sugar.Errorf("an error occurred while handling update:", err.Error())
+			logger.Sugar.Errorf("an error occurred while handling update:", err.Error())
 			return ext.DispatcherActionNoop
 		},
 		MaxRoutines: ext.DefaultMaxRoutines,
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		panic("failed to start polling: " + err.Error())
 	}
-	sugar.Infof("%s has been started...", b.User.Username)
+	logger.Sugar.Infof("%s has been started...", b.User.Username)
 
 	// Idle, to keep updates coming in, and avoid bot stopping.
 	updater.Idle()
