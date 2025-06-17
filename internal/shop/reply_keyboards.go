@@ -3,10 +3,8 @@ package shop
 import "github.com/PaulSonOfLars/gotgbot/v2"
 
 const (
-	ButtonAddPurchase  = "🛒Добавить покупку"
-	ButtonViewList     = "📋Посмотреть список покупок"
-	ButtonAchivemenets = "🎉Свершения"
-	ButtonCategories   = "📁Категории"
+	ButtonAddPurchase  = "✍️Сформировать список покупок"
+	ButtonViewList     = "📋Посмотреть списки покупок"
 	ButtonCancel       = "❌Отмена"
 	ButtonBack         = "⬅️Назад"
 )
@@ -19,10 +17,6 @@ func getMainMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
 			{
 				{Text: ButtonAddPurchase},
 				{Text: ButtonViewList},
-			},
-			{
-				{Text: ButtonAchivemenets},
-				{Text: ButtonCategories},
 			},
 		},
 	}
