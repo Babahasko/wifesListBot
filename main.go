@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"shopping_bot/configs"
 	"shopping_bot/internal/shop"
 	"shopping_bot/pkg/logger"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
 )
 
 // TODO: Заменить эти временные хранилища на нормальную бд
@@ -52,6 +55,7 @@ func main() {
 
 	// Handlers
 	shop.NewShopHandler(dispatcher)
+	dispatcher.AddHandler(handlers.NewMessage(message.All, dafaultHandler))
 
 	// Start receiving updates.
 	err = updater.StartPolling(b, &ext.PollingOpts{
@@ -72,4 +76,12 @@ func main() {
 	// Idle, to keep updates coming in, and avoid bot stopping.
 	updater.Idle()
 	// Command Handlers
+}
+
+func dafaultHandler(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveMessage.Reply(b, "Необработанное событие", nil)
+	if err != nil {
+		return fmt.Errorf("failed to handle message: %w", err)
+	}
+	return nil
 }
