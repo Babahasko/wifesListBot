@@ -3,7 +3,6 @@ package shop
 import (
 	"fmt"
 	"shopping_bot/pkg/callback"
-	"log"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -58,9 +57,12 @@ func (handler *ShopHandler) Start(b *gotgbot.Bot, ctx *ext.Context) error {
 
 func (handler *ShopHandler) AddPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
 	categories := getUserCategories(123)
-	catKeyboard := getCategoriesKeyboard(categories)
+	catKeyboard, err := getCategoriesKeyboard(categories)
+	if err != nil {
+		return fmt.Errorf("failed to get categories keyboard: %w", err)
+	}
 
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Выберите категорию", &gotgbot.SendMessageOpts{
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Выберите категорию", &gotgbot.SendMessageOpts{
 		ReplyMarkup: catKeyboard,
 	})
 	if err != nil {
@@ -81,15 +83,13 @@ func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
-	log.Println("зашли в обработчик категории")
 	cbQuery := ctx.Update.CallbackQuery
 	cbData := ctx.Update.CallbackQuery.Data
 
 	// Unpack CallBack Data
 	data, err := handler.callbackRegistry.Parse(cbData)
 	if err != nil {
-		log.Printf("Failed to parse callback: %v", err)
-		return err
+		return fmt.Errorf("failed to parse callback: %w", err)
 	}
 
 	categoryData, ok := data.(*CategoryCallback)
