@@ -3,6 +3,7 @@ package shop
 import (
 	"fmt"
 	"shopping_bot/pkg/callback"
+	"shopping_bot/pkg/logger"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -13,8 +14,8 @@ import (
 )
 
 type ShopHandler struct {
-	// Add CallbackRegistry for handler
-	callbackRegistry *callback.Registry
+	CallbackRegistry *callback.Registry
+	Client *ShopClient
 }
 
 const (
@@ -25,15 +26,16 @@ func NewShopHandler(router *ext.Dispatcher) {
 	// Handlers for shop
 	handler := &ShopHandler{
 		//Add callback registry
-		callbackRegistry: callback.NewRegistry(),
+		CallbackRegistry: callback.NewRegistry(),
+		Client: &ShopClient{},
 	}
 	// Register Callbacks
-	handler.callbackRegistry.Register(NewCategoryCallback)
+	handler.CallbackRegistry.Register(NewCategoryCallback)
 
-	router.AddHandler(handlers.NewCommand("start", handler.Start))
+	router.AddHandler(handlers.NewCommand("start", handler.start))
 	// router.AddHandler(handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase))
 	router.AddHandler(handlers.NewConversation(
-		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase)},
+		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.addPurchase)},
 		map[string][]ext.Handler{
 			CATEGORY: {handlers.NewCallback(callbackquery.Prefix("cat_"), handler.category)},
 		},
@@ -45,7 +47,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	))
 }
 
-func (handler *ShopHandler) Start(b *gotgbot.Bot, ctx *ext.Context) error {
+func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgStart, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getMainMenueKeyboard(),
 	}) //&gotgbot.SendMessageOpts{ParseMode: "MarkdownV2"}
@@ -55,7 +57,7 @@ func (handler *ShopHandler) Start(b *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 }
 
-func (handler *ShopHandler) AddPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
+func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
 	categories := getUserCategories(123)
 	catKeyboard, err := getCategoriesKeyboard(categories)
 	if err != nil {
@@ -87,7 +89,7 @@ func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbData := ctx.Update.CallbackQuery.Data
 
 	// Unpack CallBack Data
-	data, err := handler.callbackRegistry.Parse(cbData)
+	data, err := handler.CallbackRegistry.Parse(cbData)
 	if err != nil {
 		return fmt.Errorf("failed to parse callback: %w", err)
 	}
@@ -103,13 +105,19 @@ func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 		ShowAlert: false,
 	})
 
+	// set Category in UserData
+	handler.Client.setUserData(ctx, "category", categoryData.Name)
+	sessionData, result := handler.Client.getUserData(ctx, "category")
+	logger.Sugar.Debugw("get user data", "data", sessionData, "result", result)
+
 	if err != nil {
 		return fmt.Errorf("failed to send category message %w", err)
 	}
+
 	_, err = cbQuery.Message.Delete(b,nil)
 
 	if err != nil {
-		return fmt.Errorf("failed to send add name message %w", err)
+		return fmt.Errorf("failed to delete cb message %w", err)
 	}
 
 	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название", &gotgbot.SendMessageOpts{
@@ -117,14 +125,9 @@ func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to send keyboard %w", err)
+		return fmt.Errorf("failed to send add name message %w", err)
 	}
 	
-	// _, err := ctx.EffectiveMessage.Reply(b, fmt.Sprintf("Отлично, вы выбрали категорию %s!\n\n", html.EscapeString(inputCategory)), &gotgbot.SendMessageOpts{
-	// 	ParseMode: "html",
-	// })
-	// if err != nil {
-	// 	return fmt.Errorf("failed to send category message: %w", err)
 	// }
 	return handlers.EndConversation()
 }
