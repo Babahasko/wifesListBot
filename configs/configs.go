@@ -1,10 +1,10 @@
 package configs
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
+	"shopping_bot/pkg/logger"
 )
 
 type Config struct {
@@ -14,7 +14,7 @@ type Config struct {
 func LoadConfig() *Config {
 	err := godotenv.Load(".env")
 	if err != nil {
-		slog.Error("Error loading .env file, using default config")
+		logger.Sugar.Error("Error loading .env file, using default config")
 		os.Exit(1)
 	}
 	return &Config{
