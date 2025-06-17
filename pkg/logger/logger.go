@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+
 func NewSugarLogger() *zap.SugaredLogger {
 	// Define custom encoder configuration
 	encoderConfig := zapcore.EncoderConfig{
@@ -26,10 +27,11 @@ func NewSugarLogger() *zap.SugaredLogger {
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig), // Using JSON encoder
 		zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout)),
-		zap.InfoLevel,
+		zap.InfoLevel, // устанавливаем уровень логирования
 	)
 
-	logger := zap.New(core)
+	// Показываем файл, где возникла ошибки и stack трэйс для уровня zap.ErrorLevel
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
 	sugar := logger.Sugar()
 
 	return sugar
