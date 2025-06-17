@@ -1,7 +1,7 @@
 package shop
 
 import (
-	"log"
+	"fmt"
 
 	"shopping_bot/pkg/callback"
 
@@ -23,20 +23,20 @@ func getUserCategories(userID int64) []string {
 	return []string{"Общие товары"} // Категории по умолчанию
 }
 
-func getCategoriesKeyboard(categories []string) *gotgbot.InlineKeyboardMarkup {
+func getCategoriesKeyboard(categories []string) (*gotgbot.InlineKeyboardMarkup, error) {
 	var ButtonsPerRow = 3
 	var rows [][]gotgbot.InlineKeyboardButton
 	var buttons []gotgbot.InlineKeyboardButton
 	for _, category := range categories {
 
-		//Callback 
+		//Callback
 		callbackStr, err := callback.PackCallback(&CategoryCallback{
 			Name: category,
 		})
 		if err != nil {
-			log.Printf("Failed to pack callback: %v", err)
+			return nil, fmt.Errorf("failed to pack callback: %v", err)
 		}
-		
+
 		buttons = append(buttons, gotgbot.InlineKeyboardButton{
 			Text:         category,
 			CallbackData: callbackStr,
@@ -54,5 +54,5 @@ func getCategoriesKeyboard(categories []string) *gotgbot.InlineKeyboardMarkup {
 
 	return &gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: rows,
-	}
+	}, nil
 }
