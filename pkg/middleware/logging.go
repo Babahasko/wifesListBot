@@ -3,21 +3,19 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"shopping_bot/pkg/logger"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
-	"go.uber.org/zap"
 )
 
 type loggingClient struct {
 	gotgbot.BotClient
-	sugar *zap.SugaredLogger
 }
 
-func NewLoggingMiddleware(sugar *zap.SugaredLogger) func(gotgbot.BotClient) gotgbot.BotClient {
+func NewLoggingMiddleware() func(gotgbot.BotClient) gotgbot.BotClient {
 	return func(next gotgbot.BotClient) gotgbot.BotClient {
 		return &loggingClient{
 			BotClient: next,
-			sugar: sugar,
 		}
 	}
 }
@@ -31,7 +29,7 @@ func (l *loggingClient) RequestWithContext(
 	opts *gotgbot.RequestOpts,
 ) (json.RawMessage, error) {
 	if method != "getUpdates" {
-		l.sugar.Infof("Call method: %s, Parameters: %+v", method, params)
+		logger.Sugar.Infof("Call method: %s, Parameters: %+v", method, params)
 	}
 	return l.BotClient.RequestWithContext(ctx, token, method, params, data, opts)
 }

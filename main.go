@@ -25,8 +25,8 @@ func main() {
 
 	// == Middlewares ==
 	middlewareChain := middleware.Chain(
-		middleware.NewLoggingMiddleware(logger.Sugar),
-		middleware.NewErrorMiddleware(logger.Sugar),
+		middleware.NewLoggingMiddleware(),
+		middleware.NewErrorMiddleware(),
 	)
 
 	// == Setup TELEGRAM BOT ==
@@ -52,7 +52,7 @@ func main() {
 
 	// Handlers
 	shop.NewShopHandler(dispatcher)
-	
+
 	// Start receiving updates.
 	err = updater.StartPolling(b, &ext.PollingOpts{
 		DropPendingUpdates: true,
