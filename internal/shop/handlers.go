@@ -3,7 +3,6 @@ package shop
 import (
 	"fmt"
 	"shopping_bot/pkg/callback"
-	// "html"
 	"log"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
