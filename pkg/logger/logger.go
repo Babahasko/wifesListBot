@@ -27,7 +27,7 @@ func NewSugarLogger() *zap.SugaredLogger {
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig), // Using JSON encoder
 		zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout)),
-		zap.InfoLevel, // устанавливаем уровень логирования
+		zap.DebugLevel, // устанавливаем уровень логирования
 	)
 
 	// Показываем файл, где возникла ошибки и stack трэйс для уровня zap.ErrorLevel
