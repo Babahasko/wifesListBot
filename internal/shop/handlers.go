@@ -9,7 +9,6 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/conversation"
-	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/callbackquery"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
 )
 
@@ -19,10 +18,9 @@ type ShopHandler struct {
 }
 
 const (
-	CATEGORY = "category"
-	NAME = "purchase_name"
-	PRIORITY = "priority"
-	PRICE = "price"
+	NAME = "list_name"
+	PURCHASES = "add_purchases"
+	FINISH = "finish_form_list"
 )
 
 func NewShopHandler(router *ext.Dispatcher) {
@@ -38,12 +36,11 @@ func NewShopHandler(router *ext.Dispatcher) {
 	router.AddHandler(handlers.NewCommand("start", handler.start))
 	// router.AddHandler(handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase))
 	router.AddHandler(handlers.NewConversation(
-		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.addPurchase)},
+		[]ext.Handler{handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.formList)},
 		map[string][]ext.Handler{
-			CATEGORY: {handlers.NewCallback(callbackquery.Prefix("cat_"), handler.category)},
 			NAME: {handlers.NewMessage(message.Text, handler.addName)},
-			PRIORITY: {handlers.NewMessage(message.Text, handler.addPriority)},
-			PRICE: {handlers.NewMessage(message.Text, handler.addPrice)},
+			PURCHASES: {handlers.NewMessage(message.Text, handler.addPurchase)},
+			FINISH: {handlers.NewMessage(message.Equal(ButtonFinishList), handler.finish)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
@@ -63,105 +60,73 @@ func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 }
 
-func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
-	categories := getUserCategories(123)
-	catKeyboard, err := getCategoriesKeyboard(categories)
-	if err != nil {
-		return fmt.Errorf("failed to get categories keyboard: %w", err)
-	}
-
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Выберите категорию", &gotgbot.SendMessageOpts{
-		ReplyMarkup: catKeyboard,
+func (handler *ShopHandler) formList(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название списка", &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMenueKeyboard(),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to send menue message: %w", err)
 	}
-	return handlers.NextConversationState(CATEGORY)
+	return handlers.NextConversationState(PURCHASES)
 }
-
-
-
-func (handler *ShopHandler) category(b *gotgbot.Bot, ctx *ext.Context) error {
-	cbQuery := ctx.Update.CallbackQuery
-	cbData := ctx.Update.CallbackQuery.Data
-
-	// Unpack CallBack Data
-	data, err := handler.CallbackRegistry.Parse(cbData)
-	if err != nil {
-		return fmt.Errorf("failed to parse callback: %w", err)
-	}
-
-	categoryData, ok := data.(*CategoryCallback)
-	if !ok {
-		return fmt.Errorf("unexpected callback type")
-	}
-
-
-	_, err = cbQuery.Answer(b,  &gotgbot.AnswerCallbackQueryOpts{
-		Text: fmt.Sprintf("Выбрана категория %s", categoryData.Name),
-		ShowAlert: false,
-	})
-
-	// set Category in UserData
-	handler.Client.setUserData(ctx, "category", categoryData.Name)
-	sessionData, result := handler.Client.getUserData(ctx, "category")
-	logger.Sugar.Debugw("get user data", "data", sessionData, "result", result)
-
-	if err != nil {
-		return fmt.Errorf("failed to send category message %w", err)
-	}
-
-	_, err = cbQuery.Message.Delete(b,nil)
-
-	if err != nil {
-		return fmt.Errorf("failed to delete cb message %w", err)
-	}
-
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, fmt.Sprintf("Выбрана категория: %s. Введите название покупки", categoryData.Name), &gotgbot.SendMessageOpts{
-		ReplyMarkup: getMenueKeyboard(),
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to send add name message %w", err)
-	}
-	
-	// }
-	return handlers.NextConversationState(NAME)
-}
-
 func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
-	purchaseName := ctx.EffectiveMessage.Text
-	handler.Client.setUserData(ctx, "purchaseName", purchaseName)
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите приоритет от 1 до 10", &gotgbot.SendMessageOpts{
+	listName := ctx.EffectiveMessage.Text
+	handler.Client.addShoppingList(ctx, listName)
+	handler.Client.setUserData(ctx, "current_list", listName)
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название покупки", &gotgbot.SendMessageOpts{
 		ReplyMarkup: getMenueKeyboard(),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to send priority message: %w", err)
+		return fmt.Errorf("failed to send addPurchase message")
 	}
-	return handlers.NextConversationState(PRIORITY)
+	return handlers.NextConversationState(PURCHASES)
 }
 
-func (handler *ShopHandler) addPriority(b *gotgbot.Bot, ctx *ext.Context) error {
-	purchasePriority := ctx.EffectiveMessage.Text
-	handler.Client.setUserData(ctx, "purchasePriority", purchasePriority)
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите цену покупки", &gotgbot.SendMessageOpts{
-		ReplyMarkup: getMenueKeyboard(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send price message: %w", err)
-	}
-	return handlers.NextConversationState(PRICE)
+
+//TODO: Add validation for item name`s`
+// clear user list when finished
+func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
+	itemName := ctx.EffectiveMessage.Text
+	// Получаем имя списка и проверяем тип
+    listNameIface, ok := handler.Client.getUserData(ctx, "current_list")
+    if !ok || listNameIface == nil {
+        logger.Sugar.Errorw("Current list name not found in user data", "userID", ctx.EffectiveUser.Id)
+        _, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: список покупок не задан. Начните заново.", nil)
+        return err
+    }
+
+    listName, ok := listNameIface.(string)
+    if !ok {
+        logger.Sugar.Errorw("Expected current_list to be a string", "value", listNameIface, "type", fmt.Sprintf("%T", listNameIface))
+        _, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: некорректный формат списка. Начните заново.", nil)
+        return err
+    }
+
+	handler.Client.AddItemToShoppingList(ctx, listName, itemName)
+	return handlers.NextConversationState(PURCHASES)
 }
 
-func (handler *ShopHandler) addPrice(b *gotgbot.Bot, ctx *ext.Context) error {
-	purchasePrice := ctx.EffectiveMessage.Text
-	handler.Client.setUserData(ctx, "purchasePrice", purchasePrice)
-	name, _ := handler.Client.getUserData(ctx, "purchaseName")
-	priority, _ := handler.Client.getUserData(ctx, "purchasePriority")
-	price, _ := handler.Client.getUserData(ctx, "purchasePrice")
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, fmt.Sprintf("Итоговая покупка = название: %v, приоритет: %v, цена: %v.",name, priority, price), nil)
+func (handler *ShopHandler) finish(b *gotgbot.Bot, ctx *ext.Context) error {
+	listNameIface, ok := handler.Client.getUserData(ctx, "current_list")
+    if !ok || listNameIface == nil {
+        logger.Sugar.Errorw("Current list name not found in user data", "userID", ctx.EffectiveUser.Id)
+        _, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: список покупок не задан. Начните заново.", nil)
+        return err
+    }
+
+    listName, ok := listNameIface.(string)
+    if !ok {
+        logger.Sugar.Errorw("Expected current_list to be a string", "value", listNameIface, "type", fmt.Sprintf("%T", listNameIface))
+        _, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: некорректный формат списка. Начните заново.", nil)
+        return err
+    }
+	listItems, err := handler.Client.GetShoppingList(ctx, listName)
 	if err != nil {
-		return fmt.Errorf("failed to send price message: %w", err)
+		return fmt.Errorf("failed to get list items")
+	}
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, fmt.Sprintf("Отлично вот ваш список покупоЖ %v", listItems), nil)
+	if err != nil {
+		return fmt.Errorf("failed to send finish message")
 	}
 	return handlers.EndConversation()
 }
