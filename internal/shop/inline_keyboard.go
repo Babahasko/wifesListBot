@@ -1,58 +1,45 @@
 package shop
 
-import (
-	"fmt"
+// import (
+// 	"fmt"
 
-	"shopping_bot/pkg/callback"
+// 	"shopping_bot/pkg/callback"
 
-	"github.com/PaulSonOfLars/gotgbot/v2"
-)
+// 	"github.com/PaulSonOfLars/gotgbot/v2"
+// )
 
-// TODO: Заменить на нормальную бд
+// TODO: Здесь будет клавиатура формирования списка покупок
 
-var userCategories = map[int64][]string{
-	123: {"Электроника", "Одежда", "Книги"},
-	456: {"Мебель", "Спорт", "Продукты"},
-}
+// func getCategoriesKeyboard(categories []string) (*gotgbot.InlineKeyboardMarkup, error) {
+// 	var ButtonsPerRow = 3
+// 	var rows [][]gotgbot.InlineKeyboardButton
+// 	var buttons []gotgbot.InlineKeyboardButton
+// 	for _, category := range categories {
 
-// Получение категорий пользователя
-func getUserCategories(userID int64) []string {
-	if cats, ok := userCategories[userID]; ok {
-		return cats
-	}
-	return []string{"Общие товары"} // Категории по умолчанию
-}
+// 		//Callback
+// 		callbackStr, err := callback.PackCallback(&CategoryCallback{
+// 			Name: category,
+// 		})
+// 		if err != nil {
+// 			return nil, fmt.Errorf("failed to pack callback: %v", err)
+// 		}
 
-func getCategoriesKeyboard(categories []string) (*gotgbot.InlineKeyboardMarkup, error) {
-	var ButtonsPerRow = 3
-	var rows [][]gotgbot.InlineKeyboardButton
-	var buttons []gotgbot.InlineKeyboardButton
-	for _, category := range categories {
+// 		buttons = append(buttons, gotgbot.InlineKeyboardButton{
+// 			Text:         category,
+// 			CallbackData: callbackStr,
+// 		})
 
-		//Callback
-		callbackStr, err := callback.PackCallback(&CategoryCallback{
-			Name: category,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to pack callback: %v", err)
-		}
+// 		if len(buttons) == ButtonsPerRow {
+// 			rows = append(rows, buttons)
+// 			buttons = []gotgbot.InlineKeyboardButton{}
+// 		}
+// 	}
 
-		buttons = append(buttons, gotgbot.InlineKeyboardButton{
-			Text:         category,
-			CallbackData: callbackStr,
-		})
+// 	if len(buttons) > 0 {
+// 		rows = append(rows, buttons)
+// 	}
 
-		if len(buttons) == ButtonsPerRow {
-			rows = append(rows, buttons)
-			buttons = []gotgbot.InlineKeyboardButton{}
-		}
-	}
-
-	if len(buttons) > 0 {
-		rows = append(rows, buttons)
-	}
-
-	return &gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: rows,
-	}, nil
-}
+// 	return &gotgbot.InlineKeyboardMarkup{
+// 		InlineKeyboard: rows,
+// 	}, nil
+// }
