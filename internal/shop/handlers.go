@@ -34,6 +34,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 
 	// Register Callbacks
 	handler.CallbackRegistry.Register(NewListCallback)
+	handler.CallbackRegistry.Register(NewItemsCallback)
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
 
@@ -58,6 +59,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	// Lists Handlers
 	router.AddHandler(handlers.NewMessage(message.Equal(ButtonViewList), handler.showLists))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("list"), handler.showListItems))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("item"), handler.markItem))
 }
 
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -196,17 +198,10 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
     }
 
     // Распаковываем callback с помощью реестра
-    callbackData, err := handler.CallbackRegistry.Parse(cbQuery.Data)
+    listCallback, err := callback.ParseCallback[*ListCallback](handler.CallbackRegistry, cbQuery.Data)
     if err != nil {
         logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
         return fmt.Errorf("failed to parse callback data: %w", err)
-    }
-
-    // Приводим к конкретному типу ListCallback
-    listCallback, ok := callbackData.(*ListCallback)
-    if !ok {
-        logger.Sugar.Errorw("invalid callback type", "type", callbackData.Type())
-        return fmt.Errorf("invalid callback type: %s", callbackData.Type())
     }
 
     // Теперь можно получить название списка
@@ -254,6 +249,24 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 	}
 
     return nil
+}
+
+func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbQuery := ctx.Update.CallbackQuery
+    if cbQuery == nil || cbQuery.Data == "" {
+        return fmt.Errorf("empty callback data")
+    }
+
+	// Распаковываем callback с помощью реестра
+    itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
+    if err != nil {
+        logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
+        return fmt.Errorf("failed to parse callback data: %w", err)
+    }
+	listName := itemCallback.ListName
+	fmt.Println(listName)
+
+	return nil
 }
 
 func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
