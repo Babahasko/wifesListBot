@@ -1,6 +1,7 @@
 package shop
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -23,7 +24,7 @@ type ShopClient struct {
 }
 
 type UserState struct {
-	CurrentList string `json:"state"`//текущий лист покупок редактируемый пользователем
+	CurrentList string `json:"state"` //текущий лист покупок редактируемый пользователем
 }
 
 type ShoppingList struct {
@@ -31,7 +32,7 @@ type ShoppingList struct {
 	Items []string `json:"items"`
 }
 
-func (c *ShopClient) GetUserState(ctx *ext.Context) *UserState {
+func (c *ShopClient) getUserState(ctx *ext.Context) *UserState {
 	c.rwMux.Lock()
 	defer c.rwMux.Unlock()
 
@@ -41,7 +42,7 @@ func (c *ShopClient) GetUserState(ctx *ext.Context) *UserState {
 	return c.userStates[ctx.EffectiveUser.Id]
 }
 
-func (c *ShopClient) SetUserState(ctx *ext.Context, state *UserState) {
+func (c *ShopClient) setUserState(ctx *ext.Context, state *UserState) {
 	c.rwMux.Lock()
 	defer c.rwMux.Unlock()
 	if c.userStates == nil {
@@ -50,21 +51,21 @@ func (c *ShopClient) SetUserState(ctx *ext.Context, state *UserState) {
 	c.userStates[ctx.EffectiveUser.Id] = state
 }
 
-func (c *ShopClient) GetCurrentList(ctx *ext.Context) string {
-	state := c.GetUserState(ctx)
+func (c *ShopClient) getCurrentList(ctx *ext.Context) string {
+	state := c.getUserState(ctx)
 	if state == nil {
 		return ""
 	}
 	return state.CurrentList
 }
 
-func (c *ShopClient) SetCurrentListName(ctx *ext.Context, listName string) {
-	state := c.GetUserState(ctx)
+func (c *ShopClient) setCurrentListName(ctx *ext.Context, listName string) {
+	state := c.getUserState(ctx)
 	if state == nil {
 		state = &UserState{}
 	}
 	state.CurrentList = listName
-	c.SetUserState(ctx, state)
+	c.setUserState(ctx, state)
 }
 
 // TODO: добавить валидацию названия шоппинг листа?
@@ -90,7 +91,26 @@ func (c *ShopClient) addShoppingList(ctx *ext.Context, listName string) error {
 	return nil
 }
 
-func (c *ShopClient) AddItemToShoppingList(ctx *ext.Context, listName, itemName string) error {
+func (c *ShopClient) getUserLists(ctx *ext.Context) ([]string, error){
+	c.rwMux.Lock()
+	defer c.rwMux.Unlock()
+	userID := ctx.EffectiveUser.Id
+	if c.shoppingLists == nil {
+		return nil, errors.New(ErrorNoLists)
+	}
+	userLists, exists := c.shoppingLists[userID]
+	if !exists || len(userLists) == 0 {
+		return nil, errors.New(ErrorNoLists)
+	}
+
+	listNames:= make([]string, 0, len(userLists))
+	for name := range userLists{
+		listNames = append(listNames, name)
+	}
+	return listNames, nil
+}
+
+func (c *ShopClient) addItemToShoppingList(ctx *ext.Context, listName, itemName string) error {
 	c.rwMux.Lock()
 	defer c.rwMux.Unlock()
 
