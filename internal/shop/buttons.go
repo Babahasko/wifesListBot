@@ -8,5 +8,6 @@ const (
 	ButtonBack        = "⬅️Назад"
 	ButtonBackToLists = "⬅️Назад к спискам"
 	ButtonEmptyList   = "🫗Список пуст"
-	ButtonClearList = "🧹Очистить Список"
+	ButtonClearList   = "🧹Очистить список"
+	ButtonDeleteList  = "🗑Удалить список"
 )
