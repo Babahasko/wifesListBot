@@ -6,35 +6,35 @@ import (
 	"shopping_bot/pkg/callback"
 )
 
-// CategoryCallback данные для callback категории
-type CategoryCallback struct {
+// ListCallback данные для callback категории
+type ListCallback struct {
 	Name     string `json:"name"`
 }
 
-func (c *CategoryCallback) Type() string {
-	return "cat"
+func (l *ListCallback) Type() string {
+	return "list"
 }
 
 // Validation for category
-func (c *CategoryCallback) Validate() error {
-	if c.Name == "" {
+func (l *ListCallback) Validate() error {
+	if l.Name == "" {
 		return errors.New("category name cannot be empty")
 	}
-	if len(c.Name) > 30 {
+	if len(l.Name) > 30 {
 		return errors.New("category name is too long")
 	}
 	return nil
 }
 
-func (c *CategoryCallback) Marshal() ([]byte, error) {
-	return json.Marshal(c)
+func (l *ListCallback) Marshal() ([]byte, error) {
+	return json.Marshal(l)
 }
 
-func (c *CategoryCallback) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, c)
+func (l *ListCallback) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, l)
 }
 
 // NewCategoryCallback конструктор для регистрации
-func NewCategoryCallback() callback.CallbackData {
-	return &CategoryCallback{}
+func NewListCallback() callback.CallbackData {
+	return &ListCallback{}
 }
