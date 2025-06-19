@@ -32,7 +32,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	}
 
 	// Register Callbacks
-	handler.CallbackRegistry.Register(NewCategoryCallback)
+	handler.CallbackRegistry.Register(NewListCallback)
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
 	// router.AddHandler(handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase))
@@ -163,6 +163,18 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 			return fmt.Errorf("failed to send empty lists message: %w", err)
 		}
 		return nil
+	}
+
+	listsKeyboard, err := getListsKeyboard(listNames)
+	if err != nil {
+		return fmt.Errorf("failed to get lists keyboard")
+	}
+
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Ваши списки", &gotgbot.SendMessageOpts{
+		ReplyMarkup: listsKeyboard,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send keyboard message")
 	}
 
 	// TODO: Добавьте здесь код для создания и отправки inline-клавиатуры
