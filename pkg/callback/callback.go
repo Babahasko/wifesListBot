@@ -98,3 +98,18 @@ func (r *Registry) Parse(callbackStr string) (CallbackData, error) {
 	
 	return instance, nil
 }
+
+func ParseCallback[T any](registry *Registry, data string) (T, error) {
+    var zero T
+    callbackData, err := registry.Parse(data)
+    if err != nil {
+        return zero, fmt.Errorf("parse callback: %w", err)
+    }
+    
+    result, ok := callbackData.(T)
+    if !ok {
+        return zero, fmt.Errorf("unexpected callback type: %T", callbackData)
+    }
+    
+    return result, nil
+}
