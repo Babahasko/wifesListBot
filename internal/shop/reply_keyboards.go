@@ -23,13 +23,25 @@ func getMainMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
 	}
 }
 
-func getMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
+func getCancelKeyboard() *gotgbot.ReplyKeyboardMarkup {
 	return &gotgbot.ReplyKeyboardMarkup{
+		IsPersistent:   true,
+		ResizeKeyboard: true,
+		Keyboard: [][]gotgbot.KeyboardButton{
+			{
+				{Text: ButtonCancel},
+			},
+		},
+	}
+}
+
+func getFormListKeyboard() *gotgbot.ReplyKeyboardMarkup {
+	return &gotgbot.ReplyKeyboardMarkup{
+		IsPersistent:   true,
 		ResizeKeyboard: true,
 		Keyboard: [][]gotgbot.KeyboardButton{
 			{
 				{Text: ButtonFinishList},
-				{Text: ButtonBack},
 				{Text: ButtonCancel},
 			},
 		},
