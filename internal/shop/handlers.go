@@ -9,6 +9,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/conversation"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/callbackquery"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
 )
 
@@ -35,7 +36,8 @@ func NewShopHandler(router *ext.Dispatcher) {
 	handler.CallbackRegistry.Register(NewListCallback)
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
-	// router.AddHandler(handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.AddPurchase))
+
+	// Form list conversation handlers
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.formList),
@@ -52,7 +54,10 @@ func NewShopHandler(router *ext.Dispatcher) {
 			AllowReEntry: true,
 		},
 	))
+
+	// Lists Handlers
 	router.AddHandler(handlers.NewMessage(message.Equal(ButtonViewList), handler.showLists))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("list"), handler.showListItems))
 }
 
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -181,6 +186,74 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	// с использованием listNames
 
 	return nil
+}
+
+func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) error {
+    // Получаем данные callback
+    cbQuery := ctx.Update.CallbackQuery
+    if cbQuery == nil || cbQuery.Data == "" {
+        return fmt.Errorf("empty callback data")
+    }
+
+    // Распаковываем callback с помощью реестра
+    callbackData, err := handler.CallbackRegistry.Parse(cbQuery.Data)
+    if err != nil {
+        logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
+        return fmt.Errorf("failed to parse callback data: %w", err)
+    }
+
+    // Приводим к конкретному типу ListCallback
+    listCallback, ok := callbackData.(*ListCallback)
+    if !ok {
+        logger.Sugar.Errorw("invalid callback type", "type", callbackData.Type())
+        return fmt.Errorf("invalid callback type: %s", callbackData.Type())
+    }
+
+    // Теперь можно получить название списка
+    listName := listCallback.Name
+    logger.Sugar.Debugw("processing list", "name", listName)
+
+    // Получаем элементы списка
+    listItems, err := handler.Client.getListItems(ctx, listName)
+    if err != nil {
+        logger.Sugar.Errorw("failed to get list items", "list", listName, "error", err)
+        _, sendErr := cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+            Text: "Не удалось получить список покупок",
+        })
+        if sendErr != nil {
+            return fmt.Errorf("failed to send error message: %w", sendErr)
+        }
+        return fmt.Errorf("failed to get list items: %w", err)
+    }
+	
+    // Отправляем сообщение с выбраным списком
+    _, err = cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+		Text: listName,
+	})
+    if err != nil {
+        return fmt.Errorf("failed to answer callback message: %w", err)
+    }
+
+	// Удаляем сообщение с клавиатурой листа покупок
+	_, err = cbQuery.Message.Delete(b,nil)
+
+	if err != nil {
+		return fmt.Errorf("failed to send add name message %w", err)
+	}
+
+	itemsKeyboard, err := getItemsKeyboard(listName, listItems)
+	if err != nil {
+		return fmt.Errorf("failed to get items keyboard")
+	}
+	// Отправляем новое сообщение с клавиатурой покупок
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listName, &gotgbot.SendMessageOpts{
+		ReplyMarkup: itemsKeyboard,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send items keyboard")
+	}
+
+    return nil
 }
 
 func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
