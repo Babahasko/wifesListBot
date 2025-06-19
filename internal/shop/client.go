@@ -91,7 +91,7 @@ func (c *ShopClient) addShoppingList(ctx *ext.Context, listName string) error {
 	return nil
 }
 
-func (c *ShopClient) getUserLists(ctx *ext.Context) ([]string, error){
+func (c *ShopClient) getUserLists(ctx *ext.Context) ([]string, error) {
 	c.rwMux.Lock()
 	defer c.rwMux.Unlock()
 	userID := ctx.EffectiveUser.Id
@@ -103,8 +103,8 @@ func (c *ShopClient) getUserLists(ctx *ext.Context) ([]string, error){
 		return nil, errors.New(ErrorNoLists)
 	}
 
-	listNames:= make([]string, 0, len(userLists))
-	for name := range userLists{
+	listNames := make([]string, 0, len(userLists))
+	for name := range userLists {
 		listNames = append(listNames, name)
 	}
 	return listNames, nil
@@ -128,7 +128,7 @@ func (c *ShopClient) addItemToShoppingList(ctx *ext.Context, listName, itemName 
 	return nil
 }
 
-func (c *ShopClient) GetListItems(ctx *ext.Context, listName string) ([]string, error) {
+func (c *ShopClient) getListItems(ctx *ext.Context, listName string) ([]string, error) {
 	c.rwMux.RLock()
 	defer c.rwMux.RUnlock()
 

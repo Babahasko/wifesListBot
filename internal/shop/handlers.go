@@ -117,7 +117,7 @@ func (handler *ShopHandler) finish(b *gotgbot.Bot, ctx *ext.Context) error {
 		_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: список покупок не задан. Начните заново", nil)
 		return fmt.Errorf("failed to send message: %w", err)
 	}
-	listItems, err := handler.Client.GetListItems(ctx, listName)
+	listItems, err := handler.Client.getListItems(ctx, listName)
 	if err != nil {
 		return fmt.Errorf("failed to get list items")
 	}
@@ -132,43 +132,43 @@ func (handler *ShopHandler) finish(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
-    listNames, err := handler.Client.getUserLists(ctx)
-    
-    // Сначала проверяем, есть ли вообще ошибка
-    if err != nil {
-        // Проверяем, это наша специальная ошибка "нет списков"
-        if err.Error() == ErrorNoLists {
-            _, sendErr := ctx.EffectiveMessage.Reply(b, 
-                "У вас ещё нет ни одного списка! Создайте для начала командой /add", 
-                nil)
-            if sendErr != nil {
-                return fmt.Errorf("failed to send no lists message: %w", sendErr)
-            }
-            return nil
-        }
-        // Все другие ошибки
-        return fmt.Errorf("failed to get user lists: %w", err)
-    }
+	listNames, err := handler.Client.getUserLists(ctx)
 
-    // Если ошибок нет, обрабатываем список
-    logger.Sugar.Debugw("user lists", "listNames", listNames)
-    
-    // Здесь должна быть логика формирования и отправки клавиатуры
-    // Например:
-    if len(listNames) == 0 {
-        _, err := ctx.EffectiveMessage.Reply(b, 
-			"У вас ещё нет ни одного списка! Создайте для начала командой /add", 
+	// Сначала проверяем, есть ли вообще ошибка
+	if err != nil {
+		// Проверяем, это наша специальная ошибка "нет списков"
+		if err.Error() == ErrorNoLists {
+			_, sendErr := ctx.EffectiveMessage.Reply(b,
+				"У вас ещё нет ни одного списка! Создайте для начала командой /add",
+				nil)
+			if sendErr != nil {
+				return fmt.Errorf("failed to send no lists message: %w", sendErr)
+			}
+			return nil
+		}
+		// Все другие ошибки
+		return fmt.Errorf("failed to get user lists: %w", err)
+	}
+
+	// Если ошибок нет, обрабатываем список
+	logger.Sugar.Debugw("user lists", "listNames", listNames)
+
+	// Здесь должна быть логика формирования и отправки клавиатуры
+	// Например:
+	if len(listNames) == 0 {
+		_, err := ctx.EffectiveMessage.Reply(b,
+			"У вас ещё нет ни одного списка! Создайте для начала командой /add",
 			nil)
-        if err != nil {
-            return fmt.Errorf("failed to send empty lists message: %w", err)
-        }
-        return nil
-    }
+		if err != nil {
+			return fmt.Errorf("failed to send empty lists message: %w", err)
+		}
+		return nil
+	}
 
-    // TODO: Добавьте здесь код для создания и отправки inline-клавиатуры
-    // с использованием listNames
-    
-    return nil
+	// TODO: Добавьте здесь код для создания и отправки inline-клавиатуры
+	// с использованием listNames
+
+	return nil
 }
 
 func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
