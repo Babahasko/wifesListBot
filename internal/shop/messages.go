@@ -14,8 +14,8 @@ const (
 	MsgVoznya = "Пошла возня"
 )
 
-func formListMessage(items []string) string {
-	itemsText := "🛒 *Ваш список покупок:*\n"
+func formListMessage(listName string,items []string) string {
+	itemsText := fmt.Sprintf("🛒 %s\n",listName)
 	for i, item := range items {
 		itemsText += fmt.Sprintf("%d. %s\n", i+1, item)
 	}
