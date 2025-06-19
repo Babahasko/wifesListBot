@@ -53,10 +53,10 @@ func (l *ItemCallback) Type() string {
 // Validation for category
 func (l *ItemCallback) Validate() error {
 	if l.Name == "" {
-		return errors.New("category name cannot be empty")
+		return errors.New("item name cannot be empty")
 	}
 	if len(l.Name) > 30 {
-		return errors.New("category name is too long")
+		return errors.New("item name is too long")
 	}
 	return nil
 }
