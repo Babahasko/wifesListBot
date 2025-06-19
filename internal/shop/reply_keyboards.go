@@ -2,14 +2,6 @@ package shop
 
 import "github.com/PaulSonOfLars/gotgbot/v2"
 
-const (
-	ButtonAddPurchase = "✍️Сформировать список покупок"
-	ButtonViewList    = "📋Открыть список покупок"
-	ButtonFinishList  = "✅Завершить список"
-	ButtonCancel      = "❌Отмена"
-	ButtonBack        = "⬅️Назад"
-)
-
 func getMainMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
 	return &gotgbot.ReplyKeyboardMarkup{
 		OneTimeKeyboard: true,
