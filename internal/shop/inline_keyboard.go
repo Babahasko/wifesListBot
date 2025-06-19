@@ -83,6 +83,7 @@ func getItemsKeyboard(listName string, items []string) (*gotgbot.InlineKeyboardM
     keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
         {Text: ButtonBackToLists, CallbackData: "back_to_lists"},
 		{Text: ButtonClearList, CallbackData: "clear_list"},
+		{Text: ButtonDeleteList, CallbackData:"delete_list"},
     })
 
     return &gotgbot.InlineKeyboardMarkup{
