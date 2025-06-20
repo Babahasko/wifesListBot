@@ -236,7 +236,7 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 		return fmt.Errorf("failed to send add name message %w", err)
 	}
 
-	itemsKeyboard, err := getItemsKeyboard(listName, listItems)
+	itemsKeyboard, err := getItemsKeyboard(listItems)
 	if err != nil {
 		return fmt.Errorf("failed to get items keyboard")
 	}
@@ -263,7 +263,7 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
         logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
         return fmt.Errorf("failed to parse callback data: %w", err)
     }
-	listName := itemCallback.ListName
+	listName := itemCallback.Name
 	fmt.Println(listName)
 
 	return nil

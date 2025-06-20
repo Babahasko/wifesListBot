@@ -44,7 +44,7 @@ func getListsKeyboard(lists []string) (*gotgbot.InlineKeyboardMarkup, error) {
 	}, nil
 }
 
-func getItemsKeyboard(listName string, items []string) (*gotgbot.InlineKeyboardMarkup, error) {
+func getItemsKeyboard(items []*ShoppingItem) (*gotgbot.InlineKeyboardMarkup, error) {
     if len(items) == 0 {
         return &gotgbot.InlineKeyboardMarkup{
             InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
@@ -64,15 +64,16 @@ func getItemsKeyboard(listName string, items []string) (*gotgbot.InlineKeyboardM
         // Здесь можно добавить callback данные для каждой покупки
         // Например, чтобы можно было отметить как купленное
 		callbackStr, err := callback.PackCallback(&ItemCallback{
-			ListName: listName,
-			Name: item,
+			ListName: item.ListName,
+			Name: item.Name,
+			Checked: item.Checked,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to pack callback")
 		}
         row := []gotgbot.InlineKeyboardButton{
             {
-                Text:         item,
+                Text:         item.Name,
                 CallbackData: callbackStr,
             },
         }
