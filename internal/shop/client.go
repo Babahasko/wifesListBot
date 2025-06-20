@@ -29,7 +29,13 @@ type UserState struct {
 
 type ShoppingList struct {
 	Name  string   `json:"name"`
-	Items []string `json:"items"`
+	Items []*ShoppingItem `json:"items"`
+}
+
+type ShoppingItem struct {
+	ListName string `json:"list_name"`
+	Name string `json:"item_name"`
+	Checked bool `json:"checked"`
 }
 
 func (c *ShopClient) getUserState(ctx *ext.Context) *UserState {
@@ -86,7 +92,7 @@ func (c *ShopClient) addShoppingList(ctx *ext.Context, listName string) error {
 
 	c.shoppingLists[ctx.EffectiveUser.Id][listName] = &ShoppingList{
 		Name:  listName,
-		Items: []string{},
+		Items: make([]*ShoppingItem, 0),
 	}
 	return nil
 }
@@ -124,11 +130,15 @@ func (c *ShopClient) addItemToShoppingList(ctx *ext.Context, listName, itemName 
 		return fmt.Errorf("shopping list '%s' not found", listName)
 	}
 
-	list.Items = append(list.Items, itemName)
+	list.Items = append(list.Items, &ShoppingItem{
+		ListName: listName,
+		Name: itemName,
+		Checked: false,
+	})
 	return nil
 }
 
-func (c *ShopClient) getListItems(ctx *ext.Context, listName string) ([]string, error) {
+func (c *ShopClient) getListItems(ctx *ext.Context, listName string) ([]*ShoppingItem, error) {
 	c.rwMux.RLock()
 	defer c.rwMux.RUnlock()
 
@@ -147,7 +157,7 @@ func (c *ShopClient) getListItems(ctx *ext.Context, listName string) ([]string, 
 	}
 
 	// Возвращаем копию списка товаров, чтобы избежать внешних изменений
-	items := make([]string, len(shoppingList.Items))
+	items := make([]*ShoppingItem, len(shoppingList.Items))
 	copy(items, shoppingList.Items)
 
 	return items, nil
