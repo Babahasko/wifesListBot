@@ -36,14 +36,14 @@ func (l *ListCallback) Unmarshal(data []byte) error {
 }
 
 // Конструктор для регистрации колбэка
-func NewListCallback() callback.CallbackData {
+func NewListCallback() callback.CallbackService {
 	return &ListCallback{}
 }
 
 // ==Items Callback==
 type ItemCallback struct {
 	ListName string `json:"list_name"`
-	Name string `json:"name"`
+	Name     string `json:"name"`
 }
 
 func (l *ItemCallback) Type() string {
@@ -71,6 +71,6 @@ func (l *ItemCallback) Unmarshal(data []byte) error {
 }
 
 // NewItems callback
-func NewItemsCallback() callback.CallbackData {
+func NewItemsCallback() callback.CallbackService {
 	return &ItemCallback{}
 }
