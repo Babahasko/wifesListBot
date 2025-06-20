@@ -33,8 +33,8 @@ func NewListCallback() callback.CallbackService {
 // ==Items Callback==
 type ItemCallback struct {
 	ListName string `json:"list_name,omitempty"`
-	Name     string `json:"item_name,omitempty"`
-	Checked bool `json:"checked,omitempty"`
+	ItemName string `json:"item_name,omitempty"`
+	Checked  bool   `json:"checked,omitempty"`
 }
 
 func (l *ItemCallback) Type() string {
@@ -43,10 +43,10 @@ func (l *ItemCallback) Type() string {
 
 // Validation for category
 func (l *ItemCallback) Validate() error {
-	if l.Name == "" {
+	if l.ItemName == "" {
 		return errors.New("item name cannot be empty")
 	}
-	if len(l.Name) > 30 {
+	if len(l.ItemName) > 30 {
 		return errors.New("item name is too long")
 	}
 	return nil

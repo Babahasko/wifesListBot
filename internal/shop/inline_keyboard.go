@@ -45,49 +45,49 @@ func getListsKeyboard(lists []string) (*gotgbot.InlineKeyboardMarkup, error) {
 }
 
 func getItemsKeyboard(items []*ShoppingItem) (*gotgbot.InlineKeyboardMarkup, error) {
-    if len(items) == 0 {
-        return &gotgbot.InlineKeyboardMarkup{
-            InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
-                {
-                    {Text: ButtonEmptyList, CallbackData: "no_items"},
-                },
-                {
-                    {Text: ButtonBack, CallbackData: "back_to_lists"},
-                },
-            },
-        }, nil
-    }
+	if len(items) == 0 {
+		return &gotgbot.InlineKeyboardMarkup{
+			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+				{
+					{Text: ButtonEmptyList, CallbackData: "no_items"},
+				},
+				{
+					{Text: ButtonBack, CallbackData: "back_to_lists"},
+				},
+			},
+		}, nil
+	}
 
-    // Создаем кнопки для каждой покупки
-    var keyboard [][]gotgbot.InlineKeyboardButton
-    for _, item := range items {
-        // Здесь можно добавить callback данные для каждой покупки
-        // Например, чтобы можно было отметить как купленное
+	// Создаем кнопки для каждой покупки
+	var keyboard [][]gotgbot.InlineKeyboardButton
+	for _, item := range items {
+		// Здесь можно добавить callback данные для каждой покупки
+		// Например, чтобы можно было отметить как купленное
 		callbackStr, err := callback.PackCallback(&ItemCallback{
 			ListName: item.ListName,
-			Name: item.Name,
-			Checked: item.Checked,
+			ItemName: item.Name,
+			Checked:  item.Checked,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to pack callback")
 		}
-        row := []gotgbot.InlineKeyboardButton{
-            {
-                Text:         item.Name,
-                CallbackData: callbackStr,
-            },
-        }
-        keyboard = append(keyboard, row)
-    }
+		row := []gotgbot.InlineKeyboardButton{
+			{
+				Text:         item.Name,
+				CallbackData: callbackStr,
+			},
+		}
+		keyboard = append(keyboard, row)
+	}
 
-    // Добавляем кнопку "Назад"
-    keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-        {Text: ButtonBackToLists, CallbackData: "back_to_lists"},
+	// Добавляем кнопку "Назад"
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+		{Text: ButtonBackToLists, CallbackData: "back_to_lists"},
 		{Text: ButtonClearList, CallbackData: "clear_list"},
-		{Text: ButtonDeleteList, CallbackData:"delete_list"},
-    })
+		{Text: ButtonDeleteList, CallbackData: "delete_list"},
+	})
 
-    return &gotgbot.InlineKeyboardMarkup{
-        InlineKeyboard: keyboard,
-    }, nil
+	return &gotgbot.InlineKeyboardMarkup{
+		InlineKeyboard: keyboard,
+	}, nil
 }

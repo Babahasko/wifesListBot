@@ -191,46 +191,46 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) error {
-    // Получаем данные callback
-    cbQuery := ctx.Update.CallbackQuery
-    if cbQuery == nil || cbQuery.Data == "" {
-        return fmt.Errorf("empty callback data")
-    }
+	// Получаем данные callback
+	cbQuery := ctx.Update.CallbackQuery
+	if cbQuery == nil || cbQuery.Data == "" {
+		return fmt.Errorf("empty callback data")
+	}
 
-    // Распаковываем callback с помощью реестра
-    listCallback, err := callback.ParseCallback[*ListCallback](handler.CallbackRegistry, cbQuery.Data)
-    if err != nil {
-        logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
-        return fmt.Errorf("failed to parse callback data: %w", err)
-    }
+	// Распаковываем callback с помощью реестра
+	listCallback, err := callback.ParseCallback[*ListCallback](handler.CallbackRegistry, cbQuery.Data)
+	if err != nil {
+		logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
+		return fmt.Errorf("failed to parse callback data: %w", err)
+	}
 
-    // Теперь можно получить название списка
-    listName := listCallback.Name
-    logger.Sugar.Debugw("processing list", "name", listName)
+	// Теперь можно получить название списка
+	listName := listCallback.Name
+	logger.Sugar.Debugw("processing list", "name", listName)
 
-    // Получаем элементы списка
-    listItems, err := handler.Client.getListItems(ctx, listName)
-    if err != nil {
-        logger.Sugar.Errorw("failed to get list items", "list", listName, "error", err)
-        _, sendErr := cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
-            Text: "Не удалось получить список покупок",
-        })
-        if sendErr != nil {
-            return fmt.Errorf("failed to send error message: %w", sendErr)
-        }
-        return fmt.Errorf("failed to get list items: %w", err)
-    }
-	
-    // Отправляем сообщение с выбраным списком
-    _, err = cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+	// Получаем элементы списка
+	listItems, err := handler.Client.getListItems(ctx, listName)
+	if err != nil {
+		logger.Sugar.Errorw("failed to get list items", "list", listName, "error", err)
+		_, sendErr := cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+			Text: "Не удалось получить список покупок",
+		})
+		if sendErr != nil {
+			return fmt.Errorf("failed to send error message: %w", sendErr)
+		}
+		return fmt.Errorf("failed to get list items: %w", err)
+	}
+
+	// Отправляем сообщение с выбраным списком
+	_, err = cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
 		Text: listName,
 	})
-    if err != nil {
-        return fmt.Errorf("failed to answer callback message: %w", err)
-    }
+	if err != nil {
+		return fmt.Errorf("failed to answer callback message: %w", err)
+	}
 
 	// Удаляем сообщение с клавиатурой листа покупок
-	_, err = cbQuery.Message.Delete(b,nil)
+	_, err = cbQuery.Message.Delete(b, nil)
 
 	if err != nil {
 		return fmt.Errorf("failed to send add name message %w", err)
@@ -248,24 +248,26 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 		return fmt.Errorf("failed to send items keyboard")
 	}
 
-    return nil
+	return nil
 }
 
 func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
-    if cbQuery == nil || cbQuery.Data == "" {
-        return fmt.Errorf("empty callback data")
-    }
+	if cbQuery == nil || cbQuery.Data == "" {
+		return fmt.Errorf("empty callback data")
+	}
 
 	// Распаковываем callback с помощью реестра
-    itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
-    if err != nil {
-        logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
-        return fmt.Errorf("failed to parse callback data: %w", err)
-    }
-	listName := itemCallback.Name
-	fmt.Println(listName)
-
+	itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
+	if err != nil {
+		logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
+		return fmt.Errorf("failed to parse callback data: %w", err)
+	}
+	listName := itemCallback.ListName
+	itemName := itemCallback.ItemName
+	cbQuery.Answer(b,&gotgbot.AnswerCallbackQueryOpts{
+		Text: fmt.Sprintf("%s:%s", listName, itemName),
+	})
 	return nil
 }
 
