@@ -34,7 +34,6 @@ func NewListCallback() callback.CallbackService {
 type ItemCallback struct {
 	ListName string `json:"list_name,omitempty"`
 	ItemName string `json:"item_name,omitempty"`
-	Checked  bool   `json:"checked,omitempty"`
 }
 
 func (l *ItemCallback) Type() string {
