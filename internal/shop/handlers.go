@@ -243,6 +243,7 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 	// Отправляем новое сообщение с клавиатурой покупок
 	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listName, &gotgbot.SendMessageOpts{
 		ReplyMarkup: itemsKeyboard,
+		ParseMode: "MarkdownV2",
 	})
 	if err != nil {
 		return fmt.Errorf("failed to send items keyboard")
@@ -265,9 +266,45 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 	listName := itemCallback.ListName
 	itemName := itemCallback.ItemName
+
+	handler.Client.markItem(ctx, listName, itemName)
 	cbQuery.Answer(b,&gotgbot.AnswerCallbackQueryOpts{
 		Text: fmt.Sprintf("%s:%s", listName, itemName),
 	})
+
+	// Удаляем сообщение с клавиатурой листа покупок
+	_, err = cbQuery.Message.Delete(b, nil)
+
+	if err != nil {
+		return fmt.Errorf("failed to send add name message %w", err)
+	}
+
+	listItems, err := handler.Client.getListItems(ctx, listName)
+	if err != nil {
+		logger.Sugar.Errorw("failed to get list items", "list", listName, "error", err)
+		_, sendErr := cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+			Text: "Не удалось получить список покупок",
+		})
+		if sendErr != nil {
+			return fmt.Errorf("failed to send error message: %w", sendErr)
+		}
+		return fmt.Errorf("failed to get list items: %w", err)
+	}
+
+	itemsKeyboard, err := getItemsKeyboard(listItems)
+	if err != nil {
+		return fmt.Errorf("failed to get items keyboard: %w", err)
+	}
+	// Отправляем новое сообщение с клавиатурой покупок
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listName, &gotgbot.SendMessageOpts{
+		ReplyMarkup: itemsKeyboard,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send items keyboard")
+	}
+
+	
+
 	return nil
 }
 

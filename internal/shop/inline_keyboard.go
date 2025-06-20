@@ -66,14 +66,19 @@ func getItemsKeyboard(items []*ShoppingItem) (*gotgbot.InlineKeyboardMarkup, err
 		callbackStr, err := callback.PackCallback(&ItemCallback{
 			ListName: item.ListName,
 			ItemName: item.Name,
-			Checked:  item.Checked,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to pack callback")
 		}
+
+		text := item.Name
+		if item.Checked{
+			text = fmt.Sprintf("✅%s", item.Name)
+		}
+
 		row := []gotgbot.InlineKeyboardButton{
 			{
-				Text:         item.Name,
+				Text:        text,
 				CallbackData: callbackStr,
 			},
 		}
@@ -84,6 +89,8 @@ func getItemsKeyboard(items []*ShoppingItem) (*gotgbot.InlineKeyboardMarkup, err
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 		{Text: ButtonBackToLists, CallbackData: "back_to_lists"},
 		{Text: ButtonClearList, CallbackData: "clear_list"},
+	})
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 		{Text: ButtonDeleteList, CallbackData: "delete_list"},
 	})
 
