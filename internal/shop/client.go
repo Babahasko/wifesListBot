@@ -162,3 +162,14 @@ func (c *ShopClient) getListItems(ctx *ext.Context, listName string) ([]*Shoppin
 
 	return items, nil
 }
+
+func (c *ShopClient) markItem(ctx *ext.Context, listName, itemName string) error {
+	userID := ctx.EffectiveUser.Id
+	shopList := c.shoppingLists[userID][listName]
+	for _, item := range shopList.Items {
+		if item.Name == itemName {
+			item.Checked = !item.Checked
+		}
+	}
+	return nil
+}
