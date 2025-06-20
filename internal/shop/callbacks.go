@@ -1,7 +1,6 @@
 package shop
 
 import (
-	"encoding/json"
 	"errors"
 	"shopping_bot/pkg/callback"
 )
@@ -24,15 +23,6 @@ func (l *ListCallback) Validate() error {
 		return errors.New("category name is too long")
 	}
 	return nil
-}
-
-// вспомогательные методы для десериализации данных в колбэк
-func (l *ListCallback) Marshal() ([]byte, error) {
-	return json.Marshal(l)
-}
-
-func (l *ListCallback) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, l)
 }
 
 // Конструктор для регистрации колбэка
@@ -59,15 +49,6 @@ func (l *ItemCallback) Validate() error {
 		return errors.New("item name is too long")
 	}
 	return nil
-}
-
-// вспомогательные методы для десериализации данных в колбэк
-func (l *ItemCallback) Marshal() ([]byte, error) {
-	return json.Marshal(l)
-}
-
-func (l *ItemCallback) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, l)
 }
 
 // NewItems callback

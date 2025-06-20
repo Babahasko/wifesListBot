@@ -1,6 +1,7 @@
 package callback
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -10,8 +11,6 @@ import (
 type CallbackService interface {
 	Type() string             // Тип callback (префикс)
 	Validate() error          // Валидация данных
-	Marshal() ([]byte, error) // Сериализация в bytes
-	Unmarshal([]byte) error   // Десериализация из bytes
 }
 
 // Callback - обёртка для работы с callback предоставляющая методы Pack Unpack
@@ -75,7 +74,8 @@ func (r *Registry) parse(callbackStr string) (CallbackService, error) {
 	}
 
 	instance := ctor()
-	if err := instance.Unmarshal(cb.Data); err != nil {
+	dataBytes := []byte(cb.Data)
+	if err := json.Unmarshal(dataBytes, instance); err != nil {
 		return nil, fmt.Errorf("unmarshal failed: %w", err)
 	}
 
@@ -88,7 +88,7 @@ func (r *Registry) parse(callbackStr string) (CallbackService, error) {
 
 // Pack Callback and serialize to string
 func PackCallback(data CallbackService) (string, error) {
-	serilized, err := data.Marshal()
+	serilized, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("marshal failed %w", err)
 	}
