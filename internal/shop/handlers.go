@@ -20,6 +20,7 @@ type ShopHandler struct {
 
 const (
 	NAME      = "list_name"
+	LIST_NAME = "add_list_name"
 	PURCHASES = "add_purchases"
 	FINISH    = "finish_form_list"
 )
@@ -48,6 +49,21 @@ func NewShopHandler(router *ext.Dispatcher) {
 			NAME:      {handlers.NewMessage(message.Text, handler.addName)},
 			PURCHASES: {handlers.NewMessage(message.Text, handler.addPurchase)},
 			FINISH:    {handlers.NewMessage(message.Equal(ButtonFinishList), handler.finish)},
+		},
+		&handlers.ConversationOpts{
+			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
+			StateStorage: conversation.NewInMemoryStorage(conversation.KeyStrategySenderAndChat),
+			AllowReEntry: true,
+		},
+	))
+
+	// AddList conversation
+	router.AddHandler(handlers.NewConversation(
+		[]ext.Handler{
+			handlers.NewCommand("add_list", handler.addList),
+		},
+		map[string][]ext.Handler{
+			LIST_NAME:      {handlers.NewMessage(message.Text, handler.addListName)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
@@ -151,7 +167,7 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 		// Проверяем, это наша специальная ошибка "нет списков"
 		if err.Error() == ErrorNoLists {
 			_, sendErr := ctx.EffectiveMessage.Reply(b,
-				"У вас ещё нет ни одного списка! Создайте для начала командой /add",
+				"У вас ещё нет ни одного списка! Создайте для начала командой /add_list",
 				nil)
 			if sendErr != nil {
 				return fmt.Errorf("failed to send no lists message: %w", sendErr)
@@ -296,6 +312,48 @@ func(handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 	return nil
 }
+
+func (handler *ShopHandler) addList(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteListName, &gotgbot.SendMessageOpts{
+		ReplyMarkup: getCancelKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send menue message: %w", err)
+	}
+	return handlers.NextConversationState(LIST_NAME)
+}
+
+func (handler *ShopHandler) addListName(b *gotgbot.Bot, ctx *ext.Context) error {
+	//TODO: Добавить валидацию shopping list
+	listName := ctx.EffectiveMessage.Text
+	err := handler.Client.addShoppingList(ctx, listName)
+	if err != nil {
+		return fmt.Errorf("failed to add shopping list:%w", err)
+	}
+	listNames, err := handler.Client.getUserLists(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user lists: %w", err)
+	}
+
+	listsKeyboard, err := getListsKeyboard(listNames)
+	if err != nil {
+		return fmt.Errorf("failed to get lists keyboard")
+	}
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Отлично, вот ваши списки покупок!", &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMainMenueKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send successfull message")
+	}
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Списки покупок:", &gotgbot.SendMessageOpts{
+		ReplyMarkup: listsKeyboard,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send list message")
+	}
+	return handlers.EndConversation()
+}
+
 
 func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
