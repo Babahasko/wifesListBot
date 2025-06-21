@@ -23,6 +23,8 @@ const (
 	LIST_NAME = "add_list_name"
 	PURCHASES = "add_purchases"
 	FINISH    = "finish_form_list"
+	FINISH_ADDING = "finish_add_items"
+	ADDING_ITEMS = "adding_items"
 )
 
 func NewShopHandler(router *ext.Dispatcher) {
@@ -61,12 +63,29 @@ func NewShopHandler(router *ext.Dispatcher) {
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewCommand("add_list", handler.addList),
+			handlers.NewCallback(callbackquery.Prefix(CallbackAddList), handler.addList),
 		},
 		map[string][]ext.Handler{
 			LIST_NAME:      {handlers.NewMessage(message.Text, handler.addListName)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
+			StateStorage: conversation.NewInMemoryStorage(conversation.KeyStrategySenderAndChat),
+			AllowReEntry: true,
+		},
+	))
+
+	// Add items conversation
+	router.AddHandler(handlers.NewConversation(
+		[]ext.Handler{
+			handlers.NewCallback(callbackquery.Prefix(CallbackNoItems), handler.startAddItems),
+		},
+		map[string][]ext.Handler{
+			ADDING_ITEMS: {handlers.NewMessage(message.Text, handler.addItem)},
+			FINISH_ADDING: {handlers.NewMessage(message.Equal(ButtonFinishList), handler.finishAddItem)},
+		},
+		&handlers.ConversationOpts{
+			Exits: []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
 			StateStorage: conversation.NewInMemoryStorage(conversation.KeyStrategySenderAndChat),
 			AllowReEntry: true,
 		},
@@ -119,18 +138,12 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 	itemName := ctx.EffectiveMessage.Text
 	// Получаем имя текущего списка юзера
 	listName := handler.Client.getCurrentList(ctx)
-	if listName == "" {
-		logger.Sugar.Errorw("current list name not found in user state", "userID", ctx.EffectiveUser.Id)
-		_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка не задан текущий список, начните заново", nil)
-		if err != nil {
-			return fmt.Errorf("failed to send message: %w", err)
-		}
-	}
+
 	if itemName == ButtonFinishList {
 		return handler.finish(b, ctx)
 	}
 	if itemName == "/end" {
-		return handler.finish(b,ctx)
+		return handler.finish(b, ctx)
 	}
 	handler.Client.addItemToShoppingList(ctx, listName, itemName)
 	logger.Sugar.Debugw("add item: %v to shopping list: %v", itemName, listName)
@@ -140,11 +153,7 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 
 func (handler *ShopHandler) finish(b *gotgbot.Bot, ctx *ext.Context) error {
 	listName := handler.Client.getCurrentList(ctx)
-	if listName == "" {
-		logger.Sugar.Errorw("Current list name not found in user states", "userID", ctx.EffectiveUser.Id)
-		_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Ошибка: список покупок не задан. Начните заново", nil)
-		return fmt.Errorf("failed to send message: %w", err)
-	}
+
 	listItems, err := handler.Client.getListItems(ctx, listName)
 	if err != nil {
 		return fmt.Errorf("failed to get list items")
@@ -229,7 +238,7 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 	itemsKeyboard, err := getItemsKeyboard(listItems)
 
 	if err != nil {
-		return fmt.Errorf("failed to get items keyboard")
+		return fmt.Errorf("failed to get items keyboard:%w", err)
 	}
 
 	// Редактируем инлайн сообщение и отдаём клавиатуру со списком покупок
@@ -314,6 +323,10 @@ func(handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) addList(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbquery := ctx.Update.CallbackQuery
+	if cbquery != nil {
+		cbquery.Answer(b, nil)
+	}
 	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteListName, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getCancelKeyboard(),
 	})
@@ -378,7 +391,7 @@ func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 	itemsKeyboard, err := getItemsKeyboard(listItems)
 
 	if err != nil {
-		return fmt.Errorf("failed to get items keyboard")
+		return fmt.Errorf("failed to get items keyboard: %w", err)
 	}
 	// Редактируем InlineKeyboard
 	_,_, err = cbQuery.Message.EditText(b, currentList, &gotgbot.EditMessageTextOpts{
@@ -389,6 +402,57 @@ func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to send items keyboard")
 	}
 	return nil
+}
+
+func (handler *ShopHandler) startAddItems(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbQuery := ctx.Update.CallbackQuery
+	_, err := cbQuery.Message.Delete(b, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete query message")
+	}
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteItemName, &gotgbot.SendMessageOpts{
+		ReplyMarkup: getFormListKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send menue message: %w", err)
+	}
+	return handlers.NextConversationState(ADDING_ITEMS)
+}
+
+// TODO: Дописать функцию добавления item-ов
+func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
+	itemName := ctx.EffectiveMessage.Text
+	currentList := handler.Client.getCurrentList(ctx)
+	logger.Sugar.Debugw("get current list from state:", "current_list", currentList)
+	if itemName == ButtonFinishList {
+		return handler.finishAddItem(b, ctx)
+	}
+	if itemName == "/end" {
+		logger.Sugar.Debugw("/end case")
+		return handler.finishAddItem(b, ctx)
+	}
+	handler.Client.addItemToShoppingList(ctx, currentList, itemName)
+	logger.Sugar.Debugw("add item to shopping list","itemName", itemName, "listName", currentList)
+
+	return handlers.NextConversationState(ADDING_ITEMS)
+}
+
+func (handler *ShopHandler) finishAddItem(b *gotgbot.Bot, ctx *ext.Context) error {
+	logger.Sugar.Debugw("finishAddItem handler")
+	listName := handler.Client.getCurrentList(ctx)
+	
+	listItems, err := handler.Client.getListItems(ctx, listName)
+	if err != nil {
+		return fmt.Errorf("failed to get list items")
+	}
+	listMessage := formListMessage(listName, listItems)
+	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listMessage, &gotgbot.SendMessageOpts{
+		ReplyMarkup: getMainMenueKeyboard(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send finish message")
+	}
+	return handlers.EndConversation()
 }
 
 //TODO: Вынести логику поулчения клавиатуры юзера в Service
@@ -414,8 +478,6 @@ func (handler *ShopHandler) getUserLists(b *gotgbot.Bot, ctx *ext.Context) (*got
 	// Если ошибок нет, обрабатываем список
 	logger.Sugar.Debugw("user lists", "listNames", listNames)
 
-	// Здесь должна быть логика формирования и отправки клавиатуры
-	// Например:
 	if len(listNames) == 0 {
 		_, err := ctx.EffectiveMessage.Reply(b,
 			"У вас ещё нет ни одного списка! Создайте для начала командой /add",
