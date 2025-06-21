@@ -273,11 +273,11 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	})
 
 	// Удаляем сообщение с клавиатурой листа покупок
-	_, err = cbQuery.Message.Delete(b, nil)
+	// _, err = cbQuery.Message.Delete(b, nil)
 
-	if err != nil {
-		return fmt.Errorf("failed to send add name message %w", err)
-	}
+	// if err != nil {
+	// 	return fmt.Errorf("failed to send add name message %w", err)
+	// }
 
 	listItems, err := handler.Client.getListItems(ctx, listName)
 	if err != nil {
@@ -296,7 +296,7 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to get items keyboard: %w", err)
 	}
 	// Отправляем новое сообщение с клавиатурой покупок
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listName, &gotgbot.SendMessageOpts{
+	_,_,err = cbQuery.Message.EditReplyMarkup(b, &gotgbot.EditMessageReplyMarkupOpts{
 		ReplyMarkup: itemsKeyboard,
 	})
 	if err != nil {
