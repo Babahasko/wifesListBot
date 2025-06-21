@@ -4,10 +4,14 @@ import (
 	"errors"
 	"shopping_bot/pkg/callback"
 )
+
 const (
 	CallbackBackToList = "back_to_list"
-	CallbackClearList = "clear_list"
+	CallbackAddList    = "add_list"
+	CallbackClearList  = "clear_list"
+	CallbackNoItems    = "no_items"
 )
+
 // ==ListCallback==
 type ListCallback struct {
 	Name string `json:"name"`

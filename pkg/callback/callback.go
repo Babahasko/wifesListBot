@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"shopping_bot/pkg/logger"
 	"strings"
 )
 
@@ -24,6 +25,7 @@ func (c *Callback) pack() (string, error) {
 	combined := fmt.Sprintf("%s_%s", c.TypeStr, string(c.Data))
 
 	if len(combined) > 64 {
+		logger.Sugar.Errorw("combined callback", "combined", combined)
 		return "", errors.New("callback data exceeds 64 bytes limit")
 	}
 
