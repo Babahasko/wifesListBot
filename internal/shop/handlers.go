@@ -61,6 +61,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("list"), handler.showListItems))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("item"), handler.markItem))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackBackToList), handler.backToLists))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackClearList), handler.clearList))
 }
 
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -164,18 +165,6 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	// Если ошибок нет, обрабатываем список
 	logger.Sugar.Debugw("user lists", "listNames", listNames)
 
-	// Здесь должна быть логика формирования и отправки клавиатуры
-	// Например:
-	if len(listNames) == 0 {
-		_, err := ctx.EffectiveMessage.Reply(b,
-			"У вас ещё нет ни одного списка! Создайте для начала командой /add",
-			nil)
-		if err != nil {
-			return fmt.Errorf("failed to send empty lists message: %w", err)
-		}
-		return nil
-	}
-
 	listsKeyboard, err := getListsKeyboard(listNames)
 	if err != nil {
 		return fmt.Errorf("failed to get lists keyboard")
@@ -193,9 +182,6 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) error {
 	// Получаем данные callback
 	cbQuery := ctx.Update.CallbackQuery
-	if cbQuery == nil || cbQuery.Data == "" {
-		return fmt.Errorf("empty callback data")
-	}
 
 	// Распаковываем callback с помощью реестра
 	listCallback, err := callback.ParseCallback[*ListCallback](handler.CallbackRegistry, cbQuery.Data)
@@ -206,6 +192,8 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 
 	// Теперь можно получить название списка
 	listName := listCallback.Name
+	// Устанавливаем текущий лист с которым работает пользователь
+	handler.Client.setCurrentListName(ctx, listName)
 	logger.Sugar.Debugw("processing list", "name", listName)
 
 	// Получаем элементы списка
@@ -242,7 +230,6 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 
 func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
-
 	// Распаковываем callback с помощью реестра
 	itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
 	if err != nil {
@@ -280,9 +267,6 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to send items keyboard")
 	}
-
-	
-
 	return nil
 }
 
@@ -309,6 +293,42 @@ func(handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to back to lists: %w", err)
+	}
+	return nil
+}
+
+func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbQuery := ctx.Update.CallbackQuery
+	// Получаем название текущего списка пользователя
+	currentList := handler.Client.getCurrentList(ctx)
+	// Удаляем все отмеченные покупки в листе(со статус checked)
+	handler.Client.deleteMarkItems(ctx, currentList)
+	// Формируем новую клавиатуру
+	//		Получаем элементы списка
+	listItems, err := handler.Client.getListItems(ctx, currentList)
+	if err != nil {
+		logger.Sugar.Errorw("failed to get list items", "list", currentList, "error", err)
+		_, sendErr := cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
+			Text: "Не удалось получить список покупок",
+		})
+		if sendErr != nil {
+			return fmt.Errorf("failed to send error message: %w", sendErr)
+		}
+		return fmt.Errorf("failed to get list items: %w", err)
+	}
+	//		Формируем клавиатуру
+	itemsKeyboard, err := getItemsKeyboard(listItems)
+
+	if err != nil {
+		return fmt.Errorf("failed to get items keyboard")
+	}
+	// Редактируем InlineKeyboard
+	_,_, err = cbQuery.Message.EditText(b, currentList, &gotgbot.EditMessageTextOpts{
+		ReplyMarkup: itemsKeyboard,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to send items keyboard")
 	}
 	return nil
 }

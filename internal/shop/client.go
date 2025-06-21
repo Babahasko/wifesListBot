@@ -173,3 +173,16 @@ func (c *ShopClient) markItem(ctx *ext.Context, listName, itemName string) error
 	}
 	return nil
 }
+
+func (c *ShopClient) deleteMarkItems(ctx *ext.Context, listName string) error {
+	userID := ctx.EffectiveUser.Id
+	shopList := c.shoppingLists[userID][listName]
+	newShopList := make([]*ShoppingItem, 0, len(shopList.Items))
+	for _, item := range shopList.Items{
+		if !item.Checked {
+			newShopList = append(newShopList, item)
+		}
+	}
+	shopList.Items = newShopList
+	return nil
+}

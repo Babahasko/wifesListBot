@@ -6,6 +6,7 @@ import (
 )
 const (
 	CallbackBackToList = "back_to_list"
+	CallbackClearList = "clear_list"
 )
 // ==ListCallback==
 type ListCallback struct {
