@@ -17,7 +17,6 @@ func getMainMenueKeyboard() *gotgbot.ReplyKeyboardMarkup {
 
 func getCancelKeyboard() *gotgbot.ReplyKeyboardMarkup {
 	return &gotgbot.ReplyKeyboardMarkup{
-		IsPersistent:   true,
 		ResizeKeyboard: true,
 		Keyboard: [][]gotgbot.KeyboardButton{
 			{
