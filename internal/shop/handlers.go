@@ -60,6 +60,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	router.AddHandler(handlers.NewMessage(message.Equal(ButtonViewList), handler.showLists))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("list"), handler.showListItems))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("item"), handler.markItem))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackBackToList), handler.backToLists))
 }
 
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -186,10 +187,6 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to send keyboard message")
 	}
-
-	// TODO: Добавьте здесь код для создания и отправки inline-клавиатуры
-	// с использованием listNames
-
 	return nil
 }
 
@@ -245,9 +242,6 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 
 func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
-	if cbQuery == nil || cbQuery.Data == "" {
-		return fmt.Errorf("empty callback data")
-	}
 
 	// Распаковываем callback с помощью реестра
 	itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
@@ -262,13 +256,6 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery.Answer(b,&gotgbot.AnswerCallbackQueryOpts{
 		Text: fmt.Sprintf("%s:%s", listName, itemName),
 	})
-
-	// Удаляем сообщение с клавиатурой листа покупок
-	// _, err = cbQuery.Message.Delete(b, nil)
-
-	// if err != nil {
-	// 	return fmt.Errorf("failed to send add name message %w", err)
-	// }
 
 	listItems, err := handler.Client.getListItems(ctx, listName)
 	if err != nil {
@@ -308,4 +295,62 @@ func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to send cancel message: %w", err)
 	}
 	return handlers.EndConversation()
+}
+
+func(handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbQuery := ctx.Update.CallbackQuery
+	userLists, err := handler.getUserLists(b, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user lists in service:%w", err)
+	}
+	_,_, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
+		ReplyMarkup: *userLists,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to back to lists: %w", err)
+	}
+	return nil
+}
+
+//TODO: Вынести логику поулчения клавиатуры юзера в Service
+func (handler *ShopHandler) getUserLists(b *gotgbot.Bot, ctx *ext.Context) (*gotgbot.InlineKeyboardMarkup, error) {
+	listNames, err := handler.Client.getUserLists(ctx)
+
+	// Сначала проверяем, есть ли вообще ошибка
+	if err != nil {
+		// Проверяем, это наша специальная ошибка "нет списков"
+		if err.Error() == ErrorNoLists {
+			_, sendErr := ctx.EffectiveMessage.Reply(b,
+				"У вас ещё нет ни одного списка! Создайте для начала командой /add",
+				nil)
+			if sendErr != nil {
+				return nil, fmt.Errorf("failed to send no lists message: %w", sendErr)
+			}
+			return nil, nil
+		}
+		// Все другие ошибки
+		return nil, fmt.Errorf("failed to get user lists: %w", err)
+	}
+
+	// Если ошибок нет, обрабатываем список
+	logger.Sugar.Debugw("user lists", "listNames", listNames)
+
+	// Здесь должна быть логика формирования и отправки клавиатуры
+	// Например:
+	if len(listNames) == 0 {
+		_, err := ctx.EffectiveMessage.Reply(b,
+			"У вас ещё нет ни одного списка! Создайте для начала командой /add",
+			nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to send empty lists message: %w", err)
+		}
+		return nil, nil
+	}
+
+	listsKeyboard, err := getListsKeyboard(listNames)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get lists keyboard")
+	}
+	return listsKeyboard, err
 }
