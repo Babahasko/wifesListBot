@@ -44,6 +44,7 @@ func getListsKeyboard(lists []string) (*gotgbot.InlineKeyboardMarkup, error) {
 	}, nil
 }
 
+// TODO: обновить, чтобы возвращала указатель на клавиатуру
 func getItemsKeyboard(items []*ShoppingItem) (gotgbot.InlineKeyboardMarkup, error) {
 	if len(items) == 0 {
 		return gotgbot.InlineKeyboardMarkup{
