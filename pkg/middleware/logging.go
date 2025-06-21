@@ -29,7 +29,7 @@ func (l *loggingClient) RequestWithContext(
 	opts *gotgbot.RequestOpts,
 ) (json.RawMessage, error) {
 	if method != "getUpdates" {
-		logger.Sugar.Infof("Call method: %s, Parameters: %+v", method, params)
+		logger.Sugar.Infow("Logged","method", method,"params",params)
 	}
 	return l.BotClient.RequestWithContext(ctx, token, method, params, data, opts)
 }
