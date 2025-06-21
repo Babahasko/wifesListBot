@@ -73,7 +73,7 @@ func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (handler *ShopHandler) formList(b *gotgbot.Bot, ctx *ext.Context) error {
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название списка", &gotgbot.SendMessageOpts{
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteListName, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getCancelKeyboard(),
 	})
 	if err != nil {
@@ -86,7 +86,7 @@ func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
 	handler.Client.addShoppingList(ctx, listName)    // это у нас в базу летит shopping list
 	handler.Client.setCurrentListName(ctx, listName) // это у нас в кэш летит состояние пользователя
 	logger.Sugar.Debugw("current user list: %v", handler.Client.getCurrentList(ctx))
-	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Введите название покупки", &gotgbot.SendMessageOpts{
+	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteItemName, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getFormListKeyboard(),
 	})
 	if err != nil {
@@ -110,6 +110,9 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 	}
 	if itemName == ButtonFinishList {
 		return handler.finish(b, ctx)
+	}
+	if itemName == "/end" {
+		return handler.finish(b,ctx)
 	}
 	handler.Client.addItemToShoppingList(ctx, listName, itemName)
 	logger.Sugar.Debugw("add item: %v to shopping list: %v", itemName, listName)
@@ -221,30 +224,18 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 		return fmt.Errorf("failed to get list items: %w", err)
 	}
 
-	// Отправляем сообщение с выбраным списком
-	_, err = cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
-		Text: listName,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to answer callback message: %w", err)
-	}
-
-	// Удаляем сообщение с клавиатурой листа покупок
-	_, err = cbQuery.Message.Delete(b, nil)
-
-	if err != nil {
-		return fmt.Errorf("failed to send add name message %w", err)
-	}
-
+	// Формируем клавиатуру со списком покупок
 	itemsKeyboard, err := getItemsKeyboard(listItems)
+
 	if err != nil {
 		return fmt.Errorf("failed to get items keyboard")
 	}
-	// Отправляем новое сообщение с клавиатурой покупок
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, listName, &gotgbot.SendMessageOpts{
+
+	// Редактируем инлайн сообщение и отдаём клавиатуру со списком покупок
+	_,_, err = cbQuery.Message.EditText(b, listName, &gotgbot.EditMessageTextOpts{
 		ReplyMarkup: itemsKeyboard,
-		ParseMode: "MarkdownV2",
 	})
+
 	if err != nil {
 		return fmt.Errorf("failed to send items keyboard")
 	}
