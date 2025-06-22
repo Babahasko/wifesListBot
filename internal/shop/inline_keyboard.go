@@ -3,22 +3,18 @@ package shop
 import (
 	"fmt"
 
-	"shopping_bot/pkg/callback"
-
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 // TODO: Здесь будет клавиатура формирования списка покупок
 
-func getListsKeyboard(lists []string) (*gotgbot.InlineKeyboardMarkup, error) {
+func getListsKeyboard(lists []string, cbService *ListCallbackService) (*gotgbot.InlineKeyboardMarkup, error) {
 	var ButtonsPerRow = 1
 	var rows [][]gotgbot.InlineKeyboardButton
 	var buttons []gotgbot.InlineKeyboardButton
 	for _, list := range lists {
 		//Callback
-		callbackStr, err := callback.PackCallback(&ListCallback{
-			Name: list,
-		})
+		callbackStr, err := cbService.Pack(list)
 		if err != nil {
 			return nil, fmt.Errorf("failed to pack callback: %v", err)
 		}
@@ -49,7 +45,7 @@ func getListsKeyboard(lists []string) (*gotgbot.InlineKeyboardMarkup, error) {
 }
 
 // TODO: обновить, чтобы возвращала указатель на клавиатуру
-func getItemsKeyboard(items []*ShoppingItem) (gotgbot.InlineKeyboardMarkup, error) {
+func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (gotgbot.InlineKeyboardMarkup, error) {
 	if len(items) == 0 {
 		return gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
@@ -68,10 +64,7 @@ func getItemsKeyboard(items []*ShoppingItem) (gotgbot.InlineKeyboardMarkup, erro
 	for _, item := range items {
 		// Здесь можно добавить callback данные для каждой покупки
 		// Например, чтобы можно было отметить как купленное
-		callbackStr, err := callback.PackCallback(&ItemCallback{
-			ListName: item.ListName,
-			ItemName: item.Name,
-		})
+		callbackStr, err := cbService.Pack(item.Name, item.ListName)
 		if err != nil {
 			return gotgbot.InlineKeyboardMarkup{}, fmt.Errorf("failed to pack callback:%w", err)
 		}

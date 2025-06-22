@@ -2,7 +2,6 @@ package shop
 
 import (
 	"fmt"
-	"shopping_bot/pkg/callback"
 	"shopping_bot/pkg/logger"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -14,30 +13,27 @@ import (
 )
 
 type ShopHandler struct {
-	CallbackRegistry *callback.Registry
-	Client           *ShopClient
+	ListCallbackService *ListCallbackService
+	ItemCallbackService *ItemCallbackService
+	Client              *ShopClient
 }
 
 const (
-	NAME      = "list_name"
-	LIST_NAME = "add_list_name"
-	PURCHASES = "add_purchases"
-	FINISH    = "finish_form_list"
+	NAME          = "list_name"
+	LIST_NAME     = "add_list_name"
+	PURCHASES     = "add_purchases"
+	FINISH        = "finish_form_list"
 	FINISH_ADDING = "finish_add_items"
-	ADDING_ITEMS = "adding_items"
+	ADDING_ITEMS  = "adding_items"
 )
 
 func NewShopHandler(router *ext.Dispatcher) {
 	// Handlers for shop
 	handler := &ShopHandler{
-		//Add callback registry
-		CallbackRegistry: callback.NewRegistry(),
-		Client:           &ShopClient{},
+		ListCallbackService: NewListCallbackService(),
+		ItemCallbackService: NewItemCallbackService(),
+		Client:              &ShopClient{},
 	}
-
-	// Register Callbacks
-	handler.CallbackRegistry.Register(NewListCallback)
-	handler.CallbackRegistry.Register(NewItemsCallback)
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
 
@@ -66,7 +62,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 			handlers.NewCallback(callbackquery.Prefix(CallbackAddList), handler.addList),
 		},
 		map[string][]ext.Handler{
-			LIST_NAME:      {handlers.NewMessage(message.Text, handler.addListName)},
+			LIST_NAME: {handlers.NewMessage(message.Text, handler.addListName)},
 		},
 		&handlers.ConversationOpts{
 			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
@@ -81,11 +77,11 @@ func NewShopHandler(router *ext.Dispatcher) {
 			handlers.NewCallback(callbackquery.Prefix(CallbackNoItems), handler.startAddItems),
 		},
 		map[string][]ext.Handler{
-			ADDING_ITEMS: {handlers.NewMessage(message.Text, handler.addItem)},
+			ADDING_ITEMS:  {handlers.NewMessage(message.Text, handler.addItem)},
 			FINISH_ADDING: {handlers.NewMessage(message.Equal(ButtonFinishList), handler.finishAddItem)},
 		},
 		&handlers.ConversationOpts{
-			Exits: []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
+			Exits:        []ext.Handler{handlers.NewMessage(message.Equal(ButtonCancel), handler.cancel)},
 			StateStorage: conversation.NewInMemoryStorage(conversation.KeyStrategySenderAndChat),
 			AllowReEntry: true,
 		},
@@ -102,7 +98,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgStart, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getMainMenueKeyboard(),
-	}) //&gotgbot.SendMessageOpts{ParseMode: "MarkdownV2"}
+	})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -190,7 +186,7 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	// Если ошибок нет, обрабатываем список
 	logger.Sugar.Debugw("user lists", "listNames", listNames)
 
-	listsKeyboard, err := getListsKeyboard(listNames)
+	listsKeyboard, err := getListsKeyboard(listNames, handler.ListCallbackService)
 	if err != nil {
 		return fmt.Errorf("failed to get lists keyboard")
 	}
@@ -209,11 +205,7 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 	cbQuery := ctx.Update.CallbackQuery
 
 	// Распаковываем callback с помощью реестра
-	listCallback, err := callback.ParseCallback[*ListCallback](handler.CallbackRegistry, cbQuery.Data)
-	if err != nil {
-		logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
-		return fmt.Errorf("failed to parse callback data: %w", err)
-	}
+	listCallback := handler.ListCallbackService.Unpack(cbQuery.Data)
 
 	// Теперь можно получить название списка
 	listName := listCallback.Name
@@ -235,14 +227,14 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 	}
 
 	// Формируем клавиатуру со списком покупок
-	itemsKeyboard, err := getItemsKeyboard(listItems)
+	itemsKeyboard, err := getItemsKeyboard(listItems, handler.ItemCallbackService)
 
 	if err != nil {
 		return fmt.Errorf("failed to get items keyboard:%w", err)
 	}
 
 	// Редактируем инлайн сообщение и отдаём клавиатуру со списком покупок
-	_,_, err = cbQuery.Message.EditText(b, listName, &gotgbot.EditMessageTextOpts{
+	_, _, err = cbQuery.Message.EditText(b, listName, &gotgbot.EditMessageTextOpts{
 		ReplyMarkup: itemsKeyboard,
 	})
 
@@ -256,16 +248,12 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
 	// Распаковываем callback с помощью реестра
-	itemCallback, err := callback.ParseCallback[*ItemCallback](handler.CallbackRegistry, cbQuery.Data)
-	if err != nil {
-		logger.Sugar.Errorw("failed to parse callback data", "error", err, "data", cbQuery.Data)
-		return fmt.Errorf("failed to parse callback data: %w", err)
-	}
+	itemCallback := handler.ItemCallbackService.Unpack(cbQuery.Data)
 	listName := itemCallback.ListName
 	itemName := itemCallback.ItemName
 
 	handler.Client.markItem(ctx, listName, itemName)
-	cbQuery.Answer(b,&gotgbot.AnswerCallbackQueryOpts{
+	cbQuery.Answer(b, &gotgbot.AnswerCallbackQueryOpts{
 		Text: fmt.Sprintf("%s:%s", listName, itemName),
 	})
 
@@ -281,12 +269,12 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to get list items: %w", err)
 	}
 
-	itemsKeyboard, err := getItemsKeyboard(listItems)
+	itemsKeyboard, err := getItemsKeyboard(listItems, handler.ItemCallbackService)
 	if err != nil {
 		return fmt.Errorf("failed to get items keyboard: %w", err)
 	}
 	// Отправляем новое сообщение с клавиатурой покупок
-	_,_,err = cbQuery.Message.EditReplyMarkup(b, &gotgbot.EditMessageReplyMarkupOpts{
+	_, _, err = cbQuery.Message.EditReplyMarkup(b, &gotgbot.EditMessageReplyMarkupOpts{
 		ReplyMarkup: itemsKeyboard,
 	})
 	if err != nil {
@@ -297,7 +285,6 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 
 func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, "Жаль, что вы прервались!", &gotgbot.SendMessageOpts{
-		ParseMode:   "html",
 		ReplyMarkup: getMainMenueKeyboard(),
 	})
 	if err != nil {
@@ -306,13 +293,13 @@ func (handler *ShopHandler) cancel(b *gotgbot.Bot, ctx *ext.Context) error {
 	return handlers.EndConversation()
 }
 
-func(handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
+func (handler *ShopHandler) backToLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
 	userLists, err := handler.getUserLists(b, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get user lists in service:%w", err)
 	}
-	_,_, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
+	_, _, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
 		ReplyMarkup: *userLists,
 	})
 
@@ -348,7 +335,7 @@ func (handler *ShopHandler) addListName(b *gotgbot.Bot, ctx *ext.Context) error 
 		return fmt.Errorf("failed to get user lists: %w", err)
 	}
 
-	listsKeyboard, err := getListsKeyboard(listNames)
+	listsKeyboard, err := getListsKeyboard(listNames, handler.ListCallbackService)
 	if err != nil {
 		return fmt.Errorf("failed to get lists keyboard")
 	}
@@ -367,8 +354,7 @@ func (handler *ShopHandler) addListName(b *gotgbot.Bot, ctx *ext.Context) error 
 	return handlers.EndConversation()
 }
 
-
-func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
+func (handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
 	// Получаем название текущего списка пользователя
 	currentList := handler.Client.getCurrentList(ctx)
@@ -388,13 +374,13 @@ func(handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 		return fmt.Errorf("failed to get list items: %w", err)
 	}
 	//		Формируем клавиатуру
-	itemsKeyboard, err := getItemsKeyboard(listItems)
+	itemsKeyboard, err := getItemsKeyboard(listItems, handler.ItemCallbackService)
 
 	if err != nil {
 		return fmt.Errorf("failed to get items keyboard: %w", err)
 	}
 	// Редактируем InlineKeyboard
-	_,_, err = cbQuery.Message.EditText(b, currentList, &gotgbot.EditMessageTextOpts{
+	_, _, err = cbQuery.Message.EditText(b, currentList, &gotgbot.EditMessageTextOpts{
 		ReplyMarkup: itemsKeyboard,
 	})
 
@@ -432,7 +418,7 @@ func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
 		return handler.finishAddItem(b, ctx)
 	}
 	handler.Client.addItemToShoppingList(ctx, currentList, itemName)
-	logger.Sugar.Debugw("add item to shopping list","itemName", itemName, "listName", currentList)
+	logger.Sugar.Debugw("add item to shopping list", "itemName", itemName, "listName", currentList)
 
 	return handlers.NextConversationState(ADDING_ITEMS)
 }
@@ -440,7 +426,7 @@ func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
 func (handler *ShopHandler) finishAddItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	logger.Sugar.Debugw("finishAddItem handler")
 	listName := handler.Client.getCurrentList(ctx)
-	
+
 	listItems, err := handler.Client.getListItems(ctx, listName)
 	if err != nil {
 		return fmt.Errorf("failed to get list items")
@@ -455,7 +441,7 @@ func (handler *ShopHandler) finishAddItem(b *gotgbot.Bot, ctx *ext.Context) erro
 	return handlers.EndConversation()
 }
 
-//TODO: Вынести логику поулчения клавиатуры юзера в Service
+// TODO: Вынести логику поулчения клавиатуры юзера в Service
 func (handler *ShopHandler) getUserLists(b *gotgbot.Bot, ctx *ext.Context) (*gotgbot.InlineKeyboardMarkup, error) {
 	listNames, err := handler.Client.getUserLists(ctx)
 
@@ -488,7 +474,7 @@ func (handler *ShopHandler) getUserLists(b *gotgbot.Bot, ctx *ext.Context) (*got
 		return nil, nil
 	}
 
-	listsKeyboard, err := getListsKeyboard(listNames)
+	listsKeyboard, err := getListsKeyboard(listNames, handler.ListCallbackService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get lists keyboard")
 	}
