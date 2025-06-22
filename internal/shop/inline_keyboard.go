@@ -9,7 +9,7 @@ import (
 // TODO: Здесь будет клавиатура формирования списка покупок
 
 func getListsKeyboard(lists []string, cbService *ListCallbackService) (*gotgbot.InlineKeyboardMarkup, error) {
-	var ButtonsPerRow = 1
+	var ButtonsPerRow = 2
 	var rows [][]gotgbot.InlineKeyboardButton
 	var buttons []gotgbot.InlineKeyboardButton
 	if len(lists) == 0 {
