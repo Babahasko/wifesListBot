@@ -119,7 +119,7 @@ func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
 	listName := ctx.EffectiveMessage.Text
 	handler.Client.addShoppingList(ctx, listName)    // это у нас в базу летит shopping list
 	handler.Client.setCurrentListName(ctx, listName) // это у нас в кэш летит состояние пользователя
-	logger.Sugar.Debugw("current user list: %v", handler.Client.getCurrentList(ctx))
+	logger.Sugar.Debugw("current user list", "current_list", handler.Client.getCurrentList(ctx))
 	_, err := ctx.EffectiveMessage.Chat.SendMessage(b, MsgWriteItemName, &gotgbot.SendMessageOpts{
 		ReplyMarkup: getFormListKeyboard(),
 	})
@@ -339,12 +339,6 @@ func (handler *ShopHandler) addListName(b *gotgbot.Bot, ctx *ext.Context) error 
 	listsKeyboard, err := getListsKeyboard(listNames, handler.ListCallbackService)
 	if err != nil {
 		return fmt.Errorf("failed to get lists keyboard")
-	}
-	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Отлично, вот ваши списки покупок!", &gotgbot.SendMessageOpts{
-		ReplyMarkup: getMainMenueKeyboard(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send successfull message")
 	}
 	_, err = ctx.EffectiveMessage.Chat.SendMessage(b, "Списки покупок:", &gotgbot.SendMessageOpts{
 		ReplyMarkup: listsKeyboard,
