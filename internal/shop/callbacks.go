@@ -10,7 +10,7 @@ const (
 	CallbackBackToList = "back_to_list"
 	CallbackAddList    = "add_list"
 	CallbackClearList  = "clear_list"
-	CallbackNoItems    = "no_items"
+	CallbackAddItems   = "add_items"
 	CallbackDeleteList = "delete_list"
 )
 
@@ -38,7 +38,7 @@ func (c *ListCallbackService) Pack(listName string) (string, error) {
 }
 
 func (c *ListCallbackService) Unpack(cbStr string) *ListCallbackData {
-	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix + "_")
+	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix+"_")
 	data := strings.Split(withoutPrefix, "_")
 	name := data[0]
 	return &ListCallbackData{
@@ -70,7 +70,7 @@ func (c *ItemCallbackService) Pack(itemName, listName string) (string, error) {
 }
 
 func (c *ItemCallbackService) Unpack(cbStr string) *ItemCallbackData {
-	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix + "_")
+	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix+"_")
 	data := strings.Split(withoutPrefix, "_")
 	name := data[0]
 	listName := data[1]

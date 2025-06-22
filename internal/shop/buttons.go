@@ -8,7 +8,7 @@ const (
 	ButtonCancel      = "❌Отмена"
 	ButtonBack        = "⬅️Назад"
 	ButtonBackToLists = "⬅️Назад к спискам"
-	ButtonEmptyList   = "🫗Добавить товары в список"
+	ButtonAddItems    = "🫗Добавить товары в список"
 	ButtonClearList   = "🧹Очистить список"
 	ButtonDeleteList  = "🗑Удалить список"
 )

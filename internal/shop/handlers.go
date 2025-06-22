@@ -74,7 +74,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 	// Add items conversation
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
-			handlers.NewCallback(callbackquery.Prefix(CallbackNoItems), handler.startAddItems),
+			handlers.NewCallback(callbackquery.Prefix(CallbackAddItems), handler.startAddItems),
 		},
 		map[string][]ext.Handler{
 			ADDING_ITEMS:  {handlers.NewMessage(message.Text, handler.addItem)},
@@ -391,7 +391,7 @@ func (handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 }
 
-func(handler *ShopHandler) deleteList(b *gotgbot.Bot, ctx *ext.Context) error {
+func (handler *ShopHandler) deleteList(b *gotgbot.Bot, ctx *ext.Context) error {
 	cbQuery := ctx.Update.CallbackQuery
 	current_list := handler.Client.getCurrentList(ctx)
 	handler.Client.deleteList(ctx, current_list)
@@ -403,7 +403,7 @@ func(handler *ShopHandler) deleteList(b *gotgbot.Bot, ctx *ext.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get user lists: %w", err)
 	}
-	_,_, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
+	_, _, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
 		ReplyMarkup: *keyboard,
 	})
 

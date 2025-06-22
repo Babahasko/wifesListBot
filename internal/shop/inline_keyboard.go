@@ -59,7 +59,7 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*g
 		return &gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
 				{
-					{Text: ButtonEmptyList, CallbackData: CallbackNoItems},
+					{Text: ButtonAddItems, CallbackData: CallbackAddItems},
 				},
 				{
 					{Text: ButtonBack, CallbackData: CallbackBackToList},
@@ -82,13 +82,13 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*g
 		}
 
 		text := item.Name
-		if item.Checked{
+		if item.Checked {
 			text = fmt.Sprintf("✅%s", item.Name)
 		}
 
 		row := []gotgbot.InlineKeyboardButton{
 			{
-				Text:        text,
+				Text:         text,
 				CallbackData: callbackStr,
 			},
 		}
@@ -97,10 +97,11 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*g
 
 	// Добавляем кнопку "Назад"
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-		{Text: ButtonBackToLists, CallbackData: CallbackBackToList},
+		{Text: ButtonAddItems, CallbackData: CallbackAddItems},
 		{Text: ButtonClearList, CallbackData: CallbackClearList},
 	})
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+		{Text: ButtonBackToLists, CallbackData: CallbackBackToList},
 		{Text: ButtonDeleteList, CallbackData: CallbackDeleteList},
 	})
 
