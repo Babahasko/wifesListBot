@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Constan Callbacks
 const (
 	CallbackBackToList = "back_to_list"
 	CallbackAddList    = "add_list"
@@ -12,8 +13,7 @@ const (
 	CallbackNoItems    = "no_items"
 )
 
-
-
+// Complex callbacks
 type ListCallbackService struct {
 	Prefix string
 }
