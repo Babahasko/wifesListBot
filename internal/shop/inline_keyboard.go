@@ -12,6 +12,15 @@ func getListsKeyboard(lists []string, cbService *ListCallbackService) (*gotgbot.
 	var ButtonsPerRow = 1
 	var rows [][]gotgbot.InlineKeyboardButton
 	var buttons []gotgbot.InlineKeyboardButton
+	if len(lists) == 0 {
+		return &gotgbot.InlineKeyboardMarkup{
+			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+				{
+					{Text: ButtonAddList, CallbackData: CallbackAddList},
+				},
+			},
+		}, nil
+	}
 	for _, list := range lists {
 		//Callback
 		callbackStr, err := cbService.Pack(list)
@@ -55,6 +64,9 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*g
 				{
 					{Text: ButtonBack, CallbackData: CallbackBackToList},
 				},
+				{
+					{Text: ButtonDeleteList, CallbackData: CallbackDeleteList},
+				},
 			},
 		}, nil
 	}
@@ -89,7 +101,7 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*g
 		{Text: ButtonClearList, CallbackData: CallbackClearList},
 	})
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-		{Text: ButtonDeleteList, CallbackData: "delete_list"},
+		{Text: ButtonDeleteList, CallbackData: CallbackDeleteList},
 	})
 
 	return &gotgbot.InlineKeyboardMarkup{

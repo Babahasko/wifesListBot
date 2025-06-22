@@ -89,10 +89,11 @@ func NewShopHandler(router *ext.Dispatcher) {
 
 	// Lists Handlers
 	router.AddHandler(handlers.NewMessage(message.Equal(ButtonViewList), handler.showLists))
-	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("list"), handler.showListItems))
-	router.AddHandler(handlers.NewCallback(callbackquery.Prefix("item"), handler.markItem))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(handler.ListCallbackService.Prefix), handler.showListItems))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(handler.ItemCallbackService.Prefix), handler.markItem))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackBackToList), handler.backToLists))
 	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackClearList), handler.clearList))
+	router.AddHandler(handlers.NewCallback(callbackquery.Prefix(CallbackDeleteList), handler.deleteList))
 }
 
 func (handler *ShopHandler) start(b *gotgbot.Bot, ctx *ext.Context) error {
@@ -386,6 +387,28 @@ func (handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to send items keyboard")
+	}
+	return nil
+}
+
+func(handler *ShopHandler) deleteList(b *gotgbot.Bot, ctx *ext.Context) error {
+	cbQuery := ctx.Update.CallbackQuery
+	current_list := handler.Client.getCurrentList(ctx)
+	handler.Client.deleteList(ctx, current_list)
+	userLists, err := handler.Client.getUserLists(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user lists: %w", err)
+	}
+	keyboard, err := getListsKeyboard(userLists, handler.ListCallbackService)
+	if err != nil {
+		return fmt.Errorf("failed to get user lists: %w", err)
+	}
+	_,_, err = cbQuery.Message.EditText(b, "Ваши списки покупок", &gotgbot.EditMessageTextOpts{
+		ReplyMarkup: *keyboard,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to edit callback query message")
 	}
 	return nil
 }

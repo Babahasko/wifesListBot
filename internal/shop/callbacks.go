@@ -11,6 +11,7 @@ const (
 	CallbackAddList    = "add_list"
 	CallbackClearList  = "clear_list"
 	CallbackNoItems    = "no_items"
+	CallbackDeleteList = "delete_list"
 )
 
 // Complex callbacks

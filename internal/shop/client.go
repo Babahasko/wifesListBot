@@ -104,16 +104,30 @@ func (c *ShopClient) getUserLists(ctx *ext.Context) ([]string, error) {
 	if c.shoppingLists == nil {
 		return nil, errors.New(ErrorNoLists)
 	}
-	userLists, exists := c.shoppingLists[userID]
-	if !exists || len(userLists) == 0 {
-		return nil, errors.New(ErrorNoLists)
+	userLists, ok := c.shoppingLists[userID]
+	if !ok {
+		return nil, fmt.Errorf("no shopping lists found for user: %d", userID)
 	}
-
 	listNames := make([]string, 0, len(userLists))
 	for name := range userLists {
 		listNames = append(listNames, name)
 	}
 	return listNames, nil
+}
+
+func (c *ShopClient) deleteList(ctx *ext.Context, listName string) error {
+	c.rwMux.Lock()
+	defer c.rwMux.Unlock()
+
+	userID := ctx.EffectiveUser.Id
+
+	userLists := c.shoppingLists[userID]
+	_,  exists := userLists[listName]
+	if !exists {
+		return fmt.Errorf("shopping list with name %q not found for userId %d", listName, userID)
+	}
+	delete(userLists, listName)
+	return nil
 }
 
 func (c *ShopClient) addItemToShoppingList(ctx *ext.Context, listName, itemName string) error {
