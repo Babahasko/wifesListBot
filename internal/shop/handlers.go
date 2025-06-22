@@ -235,7 +235,7 @@ func (handler *ShopHandler) showListItems(b *gotgbot.Bot, ctx *ext.Context) erro
 
 	// Редактируем инлайн сообщение и отдаём клавиатуру со списком покупок
 	_, _, err = cbQuery.Message.EditText(b, listName, &gotgbot.EditMessageTextOpts{
-		ReplyMarkup: itemsKeyboard,
+		ReplyMarkup: *itemsKeyboard,
 	})
 
 	if err != nil {
@@ -275,7 +275,7 @@ func (handler *ShopHandler) markItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 	// Отправляем новое сообщение с клавиатурой покупок
 	_, _, err = cbQuery.Message.EditReplyMarkup(b, &gotgbot.EditMessageReplyMarkupOpts{
-		ReplyMarkup: itemsKeyboard,
+		ReplyMarkup: *itemsKeyboard,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to send items keyboard")
@@ -381,7 +381,7 @@ func (handler *ShopHandler) clearList(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 	// Редактируем InlineKeyboard
 	_, _, err = cbQuery.Message.EditText(b, currentList, &gotgbot.EditMessageTextOpts{
-		ReplyMarkup: itemsKeyboard,
+		ReplyMarkup: *itemsKeyboard,
 	})
 
 	if err != nil {

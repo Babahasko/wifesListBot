@@ -45,9 +45,9 @@ func getListsKeyboard(lists []string, cbService *ListCallbackService) (*gotgbot.
 }
 
 // TODO: обновить, чтобы возвращала указатель на клавиатуру
-func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (gotgbot.InlineKeyboardMarkup, error) {
+func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (*gotgbot.InlineKeyboardMarkup, error) {
 	if len(items) == 0 {
-		return gotgbot.InlineKeyboardMarkup{
+		return &gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
 				{
 					{Text: ButtonEmptyList, CallbackData: CallbackNoItems},
@@ -66,7 +66,7 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (go
 		// Например, чтобы можно было отметить как купленное
 		callbackStr, err := cbService.Pack(item.Name, item.ListName)
 		if err != nil {
-			return gotgbot.InlineKeyboardMarkup{}, fmt.Errorf("failed to pack callback:%w", err)
+			return &gotgbot.InlineKeyboardMarkup{}, fmt.Errorf("failed to pack callback:%w", err)
 		}
 
 		text := item.Name
@@ -92,7 +92,7 @@ func getItemsKeyboard(items []*ShoppingItem, cbService *ItemCallbackService) (go
 		{Text: ButtonDeleteList, CallbackData: "delete_list"},
 	})
 
-	return gotgbot.InlineKeyboardMarkup{
+	return &gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard,
 	}, nil
 }
