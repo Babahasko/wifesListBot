@@ -37,7 +37,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
 
-	// Form list conversation handlers
+	// Form list conversation
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.formList),
@@ -55,7 +55,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 		},
 	))
 
-	// AddList conversation
+	// Add List conversation
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewCommand("add_list", handler.addList),
@@ -71,7 +71,7 @@ func NewShopHandler(router *ext.Dispatcher) {
 		},
 	))
 
-	// Add items conversation
+	// Add Items conversation
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewCallback(callbackquery.Prefix(CallbackAddItems), handler.startAddItems),
@@ -133,7 +133,7 @@ func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
 // clear user list when finished
 func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
 	itemName := ctx.EffectiveMessage.Text
-	// Получаем имя текущего списка юзера
+	// Получаем имя текущего списка из кэша
 	listName := handler.Client.getCurrentList(ctx)
 
 	if itemName == ButtonFinishList {
@@ -431,7 +431,6 @@ func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
 		return handler.finishAddItem(b, ctx)
 	}
 	if itemName == "/end" {
-		logger.Sugar.Debugw("/end case")
 		return handler.finishAddItem(b, ctx)
 	}
 	handler.Client.addItemToShoppingList(ctx, currentList, itemName)
@@ -458,10 +457,9 @@ func (handler *ShopHandler) finishAddItem(b *gotgbot.Bot, ctx *ext.Context) erro
 	return handlers.EndConversation()
 }
 
-// TODO: Вынести логику поулчения клавиатуры юзера в Service
+// TODO: Вынести логику получения клавиатуры юзера в Service
 func (handler *ShopHandler) getUserLists(b *gotgbot.Bot, ctx *ext.Context) (*gotgbot.InlineKeyboardMarkup, error) {
 	listNames, err := handler.Client.getUserLists(ctx)
-
 	// Сначала проверяем, есть ли вообще ошибка
 	if err != nil {
 		// Проверяем, это наша специальная ошибка "нет списков"
