@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"shopping_bot/configs"
 	"shopping_bot/internal/bot"
+	"shopping_bot/internal/repository"
 	"shopping_bot/pkg/logger"
 	"shopping_bot/pkg/middleware"
+	"shopping_bot/internal/service"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -53,8 +55,15 @@ func main() {
 	})
 	updater := ext.NewUpdater(dispatcher, nil)
 
+	//Repository
+	shopRepo := repository.NewMemoryShoppingRepository()
+
+	// Service
+	service := service.NewShopService(shopRepo)
+
 	// Handlers
-	bot.NewShopHandler(dispatcher)
+	bot.NewShopHandler(dispatcher, service)
+
 	dispatcher.AddHandler(handlers.NewMessage(message.All, dafaultHandler))
 
 	// Start receiving updates.

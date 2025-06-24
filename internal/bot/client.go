@@ -38,6 +38,8 @@ type ShoppingItem struct {
 	Checked  bool   `json:"checked"`
 }
 
+// User States
+
 func (c *ShopClient) getUserState(ctx *ext.Context) *UserState {
 	c.rwMux.Lock()
 	defer c.rwMux.Unlock()
@@ -73,6 +75,8 @@ func (c *ShopClient) setCurrentListName(ctx *ext.Context, listName string) {
 	state.CurrentList = listName
 	c.setUserState(ctx, state)
 }
+
+// Lists
 
 // TODO: добавить валидацию названия шоппинг листа?
 func (c *ShopClient) addShoppingList(ctx *ext.Context, listName string) error {

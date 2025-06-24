@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"shopping_bot/internal/service"
 	"shopping_bot/pkg/logger"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -16,6 +17,7 @@ type ShopHandler struct {
 	ListCallbackService *ListCallbackService
 	ItemCallbackService *ItemCallbackService
 	Client              *ShopClient
+	Service             *service.ShoppingService
 }
 
 const (
@@ -27,12 +29,13 @@ const (
 	ADDING_ITEMS  = "adding_items"
 )
 
-func NewShopHandler(router *ext.Dispatcher) {
+func NewShopHandler(router *ext.Dispatcher, service *service.ShoppingService) {
 	// Handlers for shop
 	handler := &ShopHandler{
 		ListCallbackService: NewListCallbackService(),
 		ItemCallbackService: NewItemCallbackService(),
 		Client:              &ShopClient{},
+		Service:             service,
 	}
 
 	router.AddHandler(handlers.NewCommand("start", handler.start))
