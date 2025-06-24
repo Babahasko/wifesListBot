@@ -43,7 +43,7 @@ func NewShopHandler(router *ext.Dispatcher, service *service.ShoppingService) {
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
 			handlers.NewMessage(message.Equal(ButtonAddPurchase), handler.formList),
-			handlers.NewCommand("add", handler.formList),
+			handlers.NewCommand(CommandFormList, handler.formList),
 		},
 		map[string][]ext.Handler{
 			NAME:      {handlers.NewMessage(message.Text, handler.addName)},
@@ -60,7 +60,7 @@ func NewShopHandler(router *ext.Dispatcher, service *service.ShoppingService) {
 	// Add List conversation
 	router.AddHandler(handlers.NewConversation(
 		[]ext.Handler{
-			handlers.NewCommand("add_list", handler.addList),
+			handlers.NewCommand(CommandAddList, handler.addList),
 			handlers.NewCallback(callbackquery.Prefix(CallbackAddList), handler.addList),
 		},
 		map[string][]ext.Handler{
