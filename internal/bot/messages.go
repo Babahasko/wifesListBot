@@ -1,4 +1,4 @@
-package shop
+package bot
 
 import "fmt"
 
@@ -13,7 +13,7 @@ const (
 
 	MsgWriteListName = "Введите название списка📋"
 
-	MsgVoznya        = "Пошла возня"
+	MsgVoznya = "Пошла возня"
 
 	MsgWriteItemName = "Отправляйте названия покупок.\n" +
 		"\n" +

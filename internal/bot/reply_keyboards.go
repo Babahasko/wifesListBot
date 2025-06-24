@@ -1,4 +1,4 @@
-package shop
+package bot
 
 import "github.com/PaulSonOfLars/gotgbot/v2"
 

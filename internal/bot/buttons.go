@@ -1,4 +1,4 @@
-package shop
+package bot
 
 const (
 	ButtonAddPurchase = "✍️Сформировать список покупок"

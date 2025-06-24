@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"shopping_bot/configs"
-	"shopping_bot/internal/shop"
+	"shopping_bot/internal/bot"
 	"shopping_bot/pkg/logger"
 	"shopping_bot/pkg/middleware"
 	"time"
@@ -54,7 +54,7 @@ func main() {
 	updater := ext.NewUpdater(dispatcher, nil)
 
 	// Handlers
-	shop.NewShopHandler(dispatcher)
+	bot.NewShopHandler(dispatcher)
 	dispatcher.AddHandler(handlers.NewMessage(message.All, dafaultHandler))
 
 	// Start receiving updates.

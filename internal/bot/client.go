@@ -1,4 +1,4 @@
-package shop
+package bot
 
 import (
 	"errors"
@@ -28,14 +28,14 @@ type UserState struct {
 }
 
 type ShoppingList struct {
-	Name  string   `json:"name"`
+	Name  string          `json:"name"`
 	Items []*ShoppingItem `json:"items"`
 }
 
 type ShoppingItem struct {
 	ListName string `json:"list_name"`
-	Name string `json:"item_name"`
-	Checked bool `json:"checked"`
+	Name     string `json:"item_name"`
+	Checked  bool   `json:"checked"`
 }
 
 func (c *ShopClient) getUserState(ctx *ext.Context) *UserState {
@@ -122,7 +122,7 @@ func (c *ShopClient) deleteList(ctx *ext.Context, listName string) error {
 	userID := ctx.EffectiveUser.Id
 
 	userLists := c.shoppingLists[userID]
-	_,  exists := userLists[listName]
+	_, exists := userLists[listName]
 	if !exists {
 		return fmt.Errorf("shopping list with name %q not found for userId %d", listName, userID)
 	}
@@ -146,8 +146,8 @@ func (c *ShopClient) addItemToShoppingList(ctx *ext.Context, listName, itemName 
 
 	list.Items = append(list.Items, &ShoppingItem{
 		ListName: listName,
-		Name: itemName,
-		Checked: false,
+		Name:     itemName,
+		Checked:  false,
 	})
 	return nil
 }
@@ -192,7 +192,7 @@ func (c *ShopClient) deleteMarkItems(ctx *ext.Context, listName string) error {
 	userID := ctx.EffectiveUser.Id
 	shopList := c.shoppingLists[userID][listName]
 	newShopList := make([]*ShoppingItem, 0, len(shopList.Items))
-	for _, item := range shopList.Items{
+	for _, item := range shopList.Items {
 		if !item.Checked {
 			newShopList = append(newShopList, item)
 		}
