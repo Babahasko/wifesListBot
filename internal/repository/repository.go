@@ -5,7 +5,7 @@ type ShoppingRepository interface {
     SetUserState(userID int64, state *UserState) error
 
     AddShoppingList(userID int64, listName string) error
-    GetUserLists(userID int64) ([]string, error)
+    GetUserLists(userID int64) (map[string]*ShoppingList, error)
     DeleteList(userID int64, listName string) error
 
     AddItemToShoppingList(userID int64, listName, itemName string) error
