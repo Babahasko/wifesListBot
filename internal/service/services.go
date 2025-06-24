@@ -5,22 +5,24 @@ import (
 )
 
 type ShoppingService struct {
-	Repo repository.ShoppingRepository
+	repo repository.ShoppingRepository
 }
 
 func NewShopService(repo repository.ShoppingRepository) *ShoppingService {
 	return &ShoppingService{
-		Repo: repo,
+		repo: repo,
 	}
 }
 
+// TODO: Add validation for item and list name`s`
+
 func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
-	state, _ := s.Repo.GetUserState(userID)
+	state, _ := s.repo.GetUserState(userID)
 	if state == nil {
 		state = &repository.UserState{}
 	}
 	state.CurrentList = listName
-	err :=s.Repo.SetUserState(userID, state)
+	err :=s.repo.SetUserState(userID, state)
 	if err != nil {
 		return err
 	}
@@ -28,7 +30,7 @@ func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
 }
 
 func (s *ShoppingService) GetCurrentList(userID int64) (string, error) {
-	state, err := s.Repo.GetUserState(userID)
+	state, err := s.repo.GetUserState(userID)
 	if err != nil {
 		return "", err
 	}
@@ -36,11 +38,11 @@ func (s *ShoppingService) GetCurrentList(userID int64) (string, error) {
 }
 
 func (s *ShoppingService) AddShoppingList(userID int64, listName string) error {
-	return s.Repo.AddShoppingList(userID, listName)
+	return s.repo.AddShoppingList(userID, listName)
 }
 
 func (s *ShoppingService) GetUserLists(userID int64) ([]string, error) {
-	userLists, err := s.Repo.GetUserLists(userID)
+	userLists, err := s.repo.GetUserLists(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,29 +55,25 @@ func (s *ShoppingService) GetUserLists(userID int64) ([]string, error) {
 }
 
 func (s *ShoppingService) DeleteList(userID int64, listName string) error {
-	return s.Repo.DeleteList(userID, listName)
+	return s.repo.DeleteList(userID, listName)
 }
 
 func (s *ShoppingService) AddItemToShoppingList(userID int64, listName, itemName string) error {
-	return s.Repo.AddItemToShoppingList(userID, listName, itemName)
+	return s.repo.AddItemToShoppingList(userID, listName, itemName)
 }
 
-func (s *ShoppingService) GetListItems(userID int64, listName string) ([]string, error) {
-	listItems, err := s.Repo.GetListItems(userID, listName)
+func (s *ShoppingService) GetListItems(userID int64, listName string) ([]*repository.ShoppingItem, error) {
+	listItems, err := s.repo.GetListItems(userID, listName)
 	if err != nil {
 		return nil, err
 	}
-	strListItems := make([]string, 0, len(listItems))
-	for _, item := range listItems {
-		strListItems = append(strListItems, item.Name)
-	}
-	return strListItems, nil
+	return listItems, nil
 }
 
 func (s *ShoppingService) MarkItem(userID int64, listName, itemName string) error {
-	return s.Repo.MarkItem(userID, listName, itemName)
+	return s.repo.MarkItem(userID, listName, itemName)
 }
 
 func (s *ShoppingService) DeleteMarkedItems(userID int64, listName string) error {
-	return s.Repo.DeleteMarkedItems(userID, listName)
+	return s.repo.DeleteMarkedItems(userID, listName)
 }
