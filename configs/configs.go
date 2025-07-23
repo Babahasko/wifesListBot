@@ -9,6 +9,11 @@ import (
 
 type Config struct {
 	BotToken string
+	DB DBConfig
+}
+
+type DBConfig struct {
+	DSN string
 }
 
 func LoadConfig() *Config {
@@ -19,5 +24,8 @@ func LoadConfig() *Config {
 	}
 	return &Config{
 		BotToken: os.Getenv("BOT_TOKEN"),
+		DB: DBConfig {
+			DSN: os.Getenv("DSN"),
+		},
 	}
 }
