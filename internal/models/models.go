@@ -1,4 +1,4 @@
-package repository
+package models
 
 type UserState struct {
 	CurrentList string `json:"state"` //текущий лист покупок редактируемый пользователем

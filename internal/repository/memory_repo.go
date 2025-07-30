@@ -2,30 +2,25 @@ package repository
 
 import (
 	"errors"
+	"shopping_bot/internal/models"
 	"sync"
-)
-
-var (
-	ErrListExists = errors.New("shop list already exists")
-	ErrNoLists = errors.New("no shop lists for user")
-	ErrListNotFound = errors.New("shop list not found")
 )
 
 type MemoryShoppingRepository struct {
 	rwMux sync.RWMutex
 
-	shoppingLists map[int64]map[string]*ShoppingList
-	userStates    map[int64]*UserState
+	shoppingLists map[int64]map[string]*models.ShoppingList
+	userStates    map[int64]*models.UserState
 }
 
 func NewMemoryShoppingRepository() *MemoryShoppingRepository {
 	return &MemoryShoppingRepository{
-		shoppingLists: make(map[int64]map[string]*ShoppingList),
-		userStates:    make(map[int64]*UserState),
+		shoppingLists: make(map[int64]map[string]*models.ShoppingList),
+		userStates:    make(map[int64]*models.UserState),
 	}
 }
 
-func (r *MemoryShoppingRepository) GetUserState(userID int64) (*UserState, error) {
+func (r *MemoryShoppingRepository) GetUserState(userID int64) (*models.UserState, error) {
 	r.rwMux.Lock()
 	defer r.rwMux.Unlock()
 
@@ -36,7 +31,7 @@ func (r *MemoryShoppingRepository) GetUserState(userID int64) (*UserState, error
 	return state, nil
 }
 
-func (r *MemoryShoppingRepository) SetUserState(userID int64, state *UserState) error {
+func (r *MemoryShoppingRepository) SetUserState(userID int64, state *models.UserState) error {
 	r.rwMux.Lock()
 	defer r.rwMux.Unlock()
 
@@ -54,19 +49,19 @@ func (r *MemoryShoppingRepository) AddShoppingList(userID int64, listName string
 		return errors.New("shopping lists is not initialized")
 	}
 	if _, ok := r.shoppingLists[userID]; !ok {
-		r.shoppingLists[userID] = make(map[string]*ShoppingList)
+		r.shoppingLists[userID] = make(map[string]*models.ShoppingList)
 	}
 	if _, exists := r.shoppingLists[userID][listName]; exists{
 		return ErrListExists
 	}
-	r.shoppingLists[userID][listName] = &ShoppingList{
+	r.shoppingLists[userID][listName] = &models.ShoppingList{
 		Name: listName,
-		Items: make([]*ShoppingItem,0),
+		Items: make([]*models.ShoppingItem,0),
 	}
 	return nil
 }
 
-func (r *MemoryShoppingRepository) GetUserLists(userID int64) (map[string]*ShoppingList, error) {
+func (r *MemoryShoppingRepository) GetUserLists(userID int64) (map[string]*models.ShoppingList, error) {
 	r.rwMux.Lock()
 	defer r.rwMux.Unlock()
 	lists, ok := r.shoppingLists[userID]
@@ -101,7 +96,7 @@ func (r *MemoryShoppingRepository) AddItemToShoppingList(userID int64, listName,
 	if !ok {
 		return ErrListNotFound
 	}
-	list.Items = append(list.Items, &ShoppingItem{
+	list.Items = append(list.Items, &models.ShoppingItem{
 		ListName: listName,
 		Name: itemName,
 		Checked: false,
@@ -109,7 +104,7 @@ func (r *MemoryShoppingRepository) AddItemToShoppingList(userID int64, listName,
 	return nil
 }
 
-func (r *MemoryShoppingRepository) GetListItems(userID int64, listName string) ([]*ShoppingItem, error) {
+func (r *MemoryShoppingRepository) GetListItems(userID int64, listName string) ([]*models.ShoppingItem, error) {
 	r.rwMux.Lock()
 	defer r.rwMux.Unlock()
 	userLists, ok := r.shoppingLists[userID]
@@ -152,7 +147,7 @@ func (r *MemoryShoppingRepository) DeleteMarkedItems(userID int64, listName stri
 	if !ok {
 		return ErrListNotFound
 	}
-	newItems := make([]*ShoppingItem, 0, len(list.Items))
+	newItems := make([]*models.ShoppingItem, 0, len(list.Items))
 	for _, item := range list.Items {
 		if !item.Checked {
 			newItems = append(newItems, item)

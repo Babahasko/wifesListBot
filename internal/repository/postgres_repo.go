@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"shopping_bot/internal/models"
+
 	"gorm.io/gorm"
 )
 
@@ -35,18 +37,19 @@ func NewPostgresShoppingRepository(db *gorm.DB) *PostgresShoppingRepository {
 }
 
 
-func (r *PostgresShoppingRepository) GetUserState(userID int64) (*UserState, error) {
+func (r *PostgresShoppingRepository) GetUserState(userID int64) (*models.UserState, error) {
+
  return nil, nil
 }
 
-func (r *PostgresShoppingRepository) SetUserState(userID int64, state *UserState) error {
+func (r *PostgresShoppingRepository) SetUserState(userID int64, state *models.UserState) error {
 	return nil
 }
 
 func (r *PostgresShoppingRepository) AddShoppingList(userID int64, listName string) error {
 	return nil
 }
-func (r *PostgresShoppingRepository) GetUserLists(userID int64) (map[string]*ShoppingList, error) {
+func (r *PostgresShoppingRepository) GetUserLists(userID int64) (map[string]*models.ShoppingList, error) {
 	return nil, nil
 }
 func (r *PostgresShoppingRepository) DeleteList(userID int64, listName string) error {
@@ -56,7 +59,7 @@ func (r *PostgresShoppingRepository) DeleteList(userID int64, listName string) e
 func (r *PostgresShoppingRepository) AddItemToShoppingList(userID int64, listName, itemName string) error {
 	return nil
 }
-func (r *PostgresShoppingRepository) GetListItems(userID int64, listName string) ([]*ShoppingItem, error) {
+func (r *PostgresShoppingRepository) GetListItems(userID int64, listName string) ([]*models.ShoppingItem, error) {
 	return nil, nil
 }
 func (r *PostgresShoppingRepository) MarkItem(userID int64, listName, itemName string) error {
