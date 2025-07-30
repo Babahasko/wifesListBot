@@ -2,7 +2,7 @@ package bot
 
 import (
 	"fmt"
-	"shopping_bot/internal/repository"
+	"shopping_bot/internal/models"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
@@ -55,7 +55,7 @@ func getListsKeyboard(lists []string, cbService *ListCallbackService) (*gotgbot.
 }
 
 // TODO: обновить, чтобы возвращала указатель на клавиатуру
-func getItemsKeyboard(items []*repository.ShoppingItem, cbService *ItemCallbackService) (*gotgbot.InlineKeyboardMarkup, error) {
+func getItemsKeyboard(items []*models.ShoppingItem, cbService *ItemCallbackService) (*gotgbot.InlineKeyboardMarkup, error) {
 	if len(items) == 0 {
 		return &gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{

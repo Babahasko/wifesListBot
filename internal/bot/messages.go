@@ -2,7 +2,7 @@ package bot
 
 import (
 	"fmt"
-	"shopping_bot/internal/repository"
+	"shopping_bot/internal/models"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 	MsgPitty = "Жаль, что вы прервались!"
 )
 
-func formListMessage(listName string, items []*repository.ShoppingItem) string {
+func formListMessage(listName string, items []*models.ShoppingItem) string {
 	itemsText := fmt.Sprintf("🛒 %s\n", listName)
 	for i, item := range items {
 		itemsText += fmt.Sprintf("%d. %s\n", i+1, item.Name)

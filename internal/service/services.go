@@ -1,6 +1,7 @@
 package service
 
 import (
+	"shopping_bot/internal/models"
 	"shopping_bot/internal/repository"
 )
 
@@ -19,7 +20,7 @@ func NewShopService(repo repository.ShoppingRepository) *ShoppingService {
 func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
 	state, _ := s.repo.GetUserState(userID)
 	if state == nil {
-		state = &repository.UserState{}
+		state = &models.UserState{}
 	}
 	state.CurrentList = listName
 	err :=s.repo.SetUserState(userID, state)
@@ -62,7 +63,7 @@ func (s *ShoppingService) AddItemToShoppingList(userID int64, listName, itemName
 	return s.repo.AddItemToShoppingList(userID, listName, itemName)
 }
 
-func (s *ShoppingService) GetListItems(userID int64, listName string) ([]*repository.ShoppingItem, error) {
+func (s *ShoppingService) GetListItems(userID int64, listName string) ([]*models.ShoppingItem, error) {
 	listItems, err := s.repo.GetListItems(userID, listName)
 	if err != nil {
 		return nil, err

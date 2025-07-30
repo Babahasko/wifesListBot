@@ -1,9 +1,9 @@
 package main
 
 import (
-	"shopping_bot/internal/repository"
 	"log"
 	"os"
+	"shopping_bot/internal/models"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = db.AutoMigrate(&repository.ShoppingList{}, &repository.ShoppingItem{}, &repository.UserState{})
+	err = db.AutoMigrate(&models.ShoppingList{}, &models.ShoppingItem{}, &models.UserState{})
 	if err != nil {
         log.Printf("Ошибка при выполнении миграций: %v", err)
 		return
