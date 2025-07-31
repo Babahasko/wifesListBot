@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = db.AutoMigrate(&repository.GormShoppingList{}, &repository.GormShoppingItem{}, &repository.GormUserState{})
+	err = db.AutoMigrate(&repository.GormUserState{}, &repository.GormShoppingList{}, &repository.GormShoppingItem{})
 	if err != nil {
         log.Printf("Ошибка при выполнении миграций: %v", err)
 		return
