@@ -6,9 +6,10 @@ import (
 	"shopping_bot/configs"
 	"shopping_bot/internal/bot"
 	"shopping_bot/internal/repository"
+	"shopping_bot/internal/service"
+	"shopping_bot/pkg/db"
 	"shopping_bot/pkg/logger"
 	"shopping_bot/pkg/middleware"
-	"shopping_bot/internal/service"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -56,7 +57,8 @@ func main() {
 	updater := ext.NewUpdater(dispatcher, nil)
 
 	//Repository
-	shopRepo := repository.NewMemoryShoppingRepository()
+	db := db.NewDB(conf)
+	shopRepo := repository.NewPostgresShoppingRepository(db.DB)
 
 	// Service
 	service := service.NewShopService(shopRepo)
