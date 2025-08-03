@@ -113,15 +113,98 @@ func (r *PostgresShoppingRepository) DeleteList(userID int64, listName string) e
 }
 
 func (r *PostgresShoppingRepository) AddItemToShoppingList(userID int64, listName, itemName string) error {
+	var shoppingList GormShoppingList
+	err := r.db.Where("user_id = ? AND name = ?", userID, listName).First(&shoppingList).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrListNotFound
+		}
+		return err
+	}
+
+	newItem := GormShoppingItem{
+		ShoppingListID: shoppingList.ID,
+		ListName: listName,
+		Name: itemName,
+	}
+
+	if err = r.db.Create(&newItem).Error; err != nil {
+		return err
+	}
 	return nil
 }
 func (r *PostgresShoppingRepository) GetListItems(userID int64, listName string) ([]*models.ShoppingItem, error) {
-	return nil, nil
+	var gormList GormShoppingList
+	err := r.db.Where("user_id = ? AND name = ?", userID, listName).First(&gormList).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrListNotFound
+		}
+		return nil, err
+	}
+
+	var gormItems []GormShoppingItem
+	err = r.db.Where("shopping_list_id = ?", gormList.ID).Find(&gormItems).Error
+	if err != nil {
+		return nil, err
+	}
+
+	listItems := make([]*models.ShoppingItem, len(gormItems))
+	for i, gormItem := range gormItems {
+		listItems[i] = r.convertGormItemsToModel(&gormItem)
+	}
+	return listItems, nil
 }
+
 func (r *PostgresShoppingRepository) MarkItem(userID int64, listName, itemName string) error {
+	var gormList GormShoppingList
+	err := r.db.Where("user_id = ? AND name = ?", userID, listName).First(&gormList).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrListNotFound
+		}
+		return err
+	}
+
+	var item GormShoppingItem
+	err = r.db.Where("shopping_list_id = ? AND name = ?", gormList.ID, itemName).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrItemNotFound
+		}
+		return err
+	}
+
+	err = r.db.Model(&item).Update("checked", !item.Checked).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func (r *PostgresShoppingRepository) DeleteMarkedItems(userID int64, listName string) error {
+	var gormList GormShoppingList
+	err := r.db.Where("user_id = ? AND name = ?", userID, listName).First(&gormList).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrListNotFound
+		}
+		return err
+	}
+
+	var markedItems []GormShoppingItem
+	err = r.db.Where("shopping_list_id = ? AND checked = ?", gormList.ID, true).Find(&markedItems).Error
+	if err != nil {
+		return err
+	}
+
+	if len(markedItems) > 0 {
+		for _, item := range markedItems {
+			err := r.db.Where("id = ?", item.ID).Delete(&GormShoppingItem{}).Error
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -151,5 +234,14 @@ func (r *PostgresShoppingRepository) convertGormListToModel(gormList *GormShoppi
 	return &models.ShoppingList{
 		Name: gormList.Name,
 		Items: items,
+	}
+}
+
+func (r *PostgresShoppingRepository) convertGormItemsToModel(gormItem *GormShoppingItem) *models.ShoppingItem {
+	return &models.ShoppingItem{
+		ShoppingListID: gormItem.ShoppingListID,
+		ListName: gormItem.ListName,
+		Name: gormItem.Name,
+		Checked: gormItem.Checked,
 	}
 }
