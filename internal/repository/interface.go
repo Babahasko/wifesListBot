@@ -11,10 +11,12 @@ var (
 	ErrListNotFound = errors.New("shop list not found")
 	ErrNoState      = errors.New("no state for this user")
 	ErrItemNotFound = errors.New("item not found in shopping list")
+	ErrUserStateExist = errors.New("user state already exist")
 )
 
 type ShoppingRepository interface {
 	GetUserState(userID int64) (*models.UserState, error)
+	UpdateUserState(userID int64, state *models.UserState) error
 	SetUserState(userID int64, state *models.UserState) error
 
 	AddShoppingList(userID int64, listName string) error

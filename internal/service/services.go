@@ -18,14 +18,19 @@ func NewShopService(repo repository.ShoppingRepository) *ShoppingService {
 // TODO: Add validation for item and list name`s`
 
 func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
-	state, _ := s.repo.GetUserState(userID)
-	if state == nil {
-		state = &models.UserState{}
-	}
-	state.CurrentList = listName
-	err :=s.repo.SetUserState(userID, state)
+	state, err := s.repo.GetUserState(userID)
 	if err != nil {
 		return err
+	}
+	if state != nil {
+		state.CurrentList = listName
+		return s.repo.UpdateUserState(userID, state)
+	}
+	state = &models.UserState{}
+	state.CurrentList = listName
+	err = s.repo.SetUserState(userID, state)
+	if err != nil && err == repository.ErrUserStateExist{
+		return s.repo.UpdateUserState(userID, state)
 	}
 	return nil
 }

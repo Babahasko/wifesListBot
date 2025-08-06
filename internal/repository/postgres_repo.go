@@ -58,6 +58,15 @@ func (r *PostgresShoppingRepository) SetUserState(userID int64, state *models.Us
 	return nil
 }
 
+func (r *PostgresShoppingRepository) UpdateUserState(userID int64, state *models.UserState) error {
+	gormUserState := r.convertUserStateToGormModel(userID, state)
+	result := r.db.Model(&gormUserState).Where("user_id = ?", userID).Update("current_list", gormUserState.CurrentList)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
 func (r *PostgresShoppingRepository) AddShoppingList(userID int64, listName string) error {
 	// Проверяем, что список существует
 	var existingList GormShoppingList

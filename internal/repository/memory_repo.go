@@ -42,6 +42,13 @@ func (r *MemoryShoppingRepository) SetUserState(userID int64, state *models.User
 	return nil
 }
 
+func (r *MemoryShoppingRepository) UpdateUserState(userID int64, state *models.UserState) error {
+	r.rwMux.Lock()
+	defer r.rwMux.Unlock()
+	r.userStates[userID] = state
+	return nil
+}
+
 func (r *MemoryShoppingRepository) AddShoppingList(userID int64, listName string) error {
 	r.rwMux.Lock()
 	defer r.rwMux.Unlock()
