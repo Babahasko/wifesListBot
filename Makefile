@@ -9,7 +9,6 @@ test-integration:
 	docker-compose -f ./test/docker-compose.test.yml up -d --wait
 	go test -v ./internal/repository -tags=integration -count=1
 	docker-compose -f ./test/docker-compose.test.yml down
-
 test-migrations:
 	docker-compose -f ./test/docker-compose.test.yml up -d --wait
 	@echo "Applying test migrations..."
