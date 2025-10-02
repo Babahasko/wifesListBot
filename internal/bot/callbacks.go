@@ -30,7 +30,9 @@ func NewListCallbackService() *ListCallbackService {
 }
 
 func (c *ListCallbackService) Pack(listName string) (string, error) {
-	cbStr := fmt.Sprintf("%s_%s", c.Prefix, listName)
+	// Заменяем подчеркивания на безопасные символы
+	safeName := strings.ReplaceAll(listName, "_", "-")
+	cbStr := fmt.Sprintf("%s_%s", c.Prefix, safeName)
 	if len(cbStr) >= 64 {
 		return "", fmt.Errorf("cbStr is too long")
 	}
@@ -40,7 +42,14 @@ func (c *ListCallbackService) Pack(listName string) (string, error) {
 func (c *ListCallbackService) Unpack(cbStr string) *ListCallbackData {
 	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix+"_")
 	data := strings.Split(withoutPrefix, "_")
-	name := data[0]
+	if len(data) < 1 || data[0] == "" {
+		// Возвращаем пустые данные если callback поврежден
+		return &ListCallbackData{
+			Name: "",
+		}
+	}
+	// Восстанавливаем оригинальное имя
+	name := strings.ReplaceAll(data[0], "-", "_")
 	return &ListCallbackData{
 		Name: name,
 	}
@@ -62,7 +71,10 @@ func NewItemCallbackService() *ItemCallbackService {
 }
 
 func (c *ItemCallbackService) Pack(itemName, listName string) (string, error) {
-	cbStr := fmt.Sprintf("%s_%s_%s", c.Prefix, itemName, listName)
+	// Заменяем подчеркивания на безопасные символы
+	safeItemName := strings.ReplaceAll(itemName, "_", "-")
+	safeListName := strings.ReplaceAll(listName, "_", "-")
+	cbStr := fmt.Sprintf("%s_%s_%s", c.Prefix, safeItemName, safeListName)
 	if len(cbStr) >= 64 {
 		return "", fmt.Errorf("cbStr is too long")
 	}
@@ -72,8 +84,16 @@ func (c *ItemCallbackService) Pack(itemName, listName string) (string, error) {
 func (c *ItemCallbackService) Unpack(cbStr string) *ItemCallbackData {
 	withoutPrefix := strings.TrimPrefix(cbStr, c.Prefix+"_")
 	data := strings.Split(withoutPrefix, "_")
-	name := data[0]
-	listName := data[1]
+	if len(data) < 2 || data[0] == "" || data[1] == "" {
+		// Возвращаем пустые данные если callback поврежден
+		return &ItemCallbackData{
+			ItemName: "",
+			ListName: "",
+		}
+	}
+	// Восстанавливаем оригинальные имена
+	name := strings.ReplaceAll(data[0], "-", "_")
+	listName := strings.ReplaceAll(data[1], "-", "_")
 	return &ItemCallbackData{
 		ItemName: name,
 		ListName: listName,
