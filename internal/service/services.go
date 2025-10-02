@@ -3,6 +3,7 @@ package service
 import (
 	"shopping_bot/internal/models"
 	"shopping_bot/internal/repository"
+	"sort"
 )
 
 type ShoppingService struct {
@@ -57,6 +58,8 @@ func (s *ShoppingService) GetUserLists(userID int64) ([]string, error) {
 	for _, list := range userLists {
 		strListNames = append(strListNames, list.Name)
 	}
+	sort.Strings(strListNames)
+
 	return strListNames, nil
 }
 

@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load(`D:\Programming\6_Private_Project\BuysBot\.env`)
+	err := godotenv.Load(`.env`)
 	if err != nil {
 		panic(err)
 	}
