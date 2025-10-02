@@ -30,7 +30,7 @@ func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
 	state = &models.UserState{}
 	state.CurrentList = listName
 	err = s.repo.SetUserState(userID, state)
-	if err != nil && err == repository.ErrUserStateExist{
+	if err != nil && err == repository.ErrUserStateExist {
 		return s.repo.UpdateUserState(userID, state)
 	}
 	return nil
@@ -39,6 +39,10 @@ func (s *ShoppingService) SetCurrentList(userID int64, listName string) error {
 func (s *ShoppingService) GetCurrentList(userID int64) (string, error) {
 	state, err := s.repo.GetUserState(userID)
 	if err != nil {
+		if err == repository.ErrNoState {
+			// Если состояния нет, возвращаем пустую строку
+			return "", repository.ErrNoState
+		}
 		return "", err
 	}
 	return state.CurrentList, nil

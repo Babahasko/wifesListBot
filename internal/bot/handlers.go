@@ -3,6 +3,7 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"shopping_bot/internal/repository"
 	"shopping_bot/internal/service"
 	"shopping_bot/pkg/logger"
 
@@ -128,7 +129,7 @@ func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
 	// handler.Client.setCurrentListName(ctx, listName) // это у нас в кэш летит состояние пользователя
 	currentlist, err := handler.Service.GetCurrentList(userID)
 	if err != nil {
-		return fmt.Errorf("failed to get current list namae for user")
+		return fmt.Errorf("failed to get current list name for user")
 	}
 	logger.Sugar.Debugw("current user list", "current_list", currentlist)
 
@@ -141,7 +142,6 @@ func (handler *ShopHandler) addName(b *gotgbot.Bot, ctx *ext.Context) error {
 	return handlers.NextConversationState(PURCHASES)
 }
 
-
 // clear user list when finished
 func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error {
 	itemName := ctx.EffectiveMessage.Text
@@ -149,9 +149,19 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 	userID := ctx.EffectiveUser.Id
 	listName, err := handler.Service.GetCurrentList(userID)
 	if err != nil {
-		return fmt.Errorf("failed to get current list namae for user")
+		if err == repository.ErrNoState {
+			// Если состояние не найдено, прерываем диалог
+			_, sendErr := ctx.EffectiveMessage.Reply(b, "Сначала создайте список покупок", &gotgbot.SendMessageOpts{
+				ReplyMarkup: getMainMenueKeyboard(),
+			})
+			if sendErr != nil {
+				return fmt.Errorf("failed to send error message: %w", sendErr)
+			}
+			return handlers.EndConversation()
+		}
+		return fmt.Errorf("failed to get current list name for user: %w", err)
 	}
-	
+
 	if itemName == ButtonFinishList {
 		return handler.finish(b, ctx)
 	}
@@ -160,7 +170,7 @@ func (handler *ShopHandler) addPurchase(b *gotgbot.Bot, ctx *ext.Context) error 
 	}
 	handler.Service.AddItemToShoppingList(userID, listName, itemName)
 	// handler.Client.addItemToShoppingList(ctx, listName, itemName)
-	logger.Sugar.Debugw("add item: to shopping list","itemName", itemName, "listName", listName)
+	logger.Sugar.Debugw("add item: to shopping list", "itemName", itemName, "listName", listName)
 
 	return handlers.NextConversationState(PURCHASES)
 }
@@ -170,7 +180,16 @@ func (handler *ShopHandler) finish(b *gotgbot.Bot, ctx *ext.Context) error {
 	userID := ctx.EffectiveUser.Id
 	listName, err := handler.Service.GetCurrentList(userID)
 	if err != nil {
-		return fmt.Errorf("failed to get current list namae for user")
+		if err == repository.ErrNoState {
+			_, sendErr := ctx.EffectiveMessage.Reply(b, "Сначала создайте список покупок", &gotgbot.SendMessageOpts{
+				ReplyMarkup: getMainMenueKeyboard(),
+			})
+			if sendErr != nil {
+				return fmt.Errorf("failed to send error message: %w", sendErr)
+			}
+			return handlers.EndConversation()
+		}
+		return fmt.Errorf("failed to get current list name for user: %w", err)
 	}
 
 	// listItems, err := handler.Client.getListItems(ctx, listName)
@@ -196,7 +215,7 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	// Сначала проверяем, есть ли вообще ошибка
 	switch {
-	case errors.Is(err, ErrNoLists):
+	case errors.Is(err, repository.ErrNoLists):
 		_, sendErr := ctx.EffectiveMessage.Reply(b,
 			MsgNoLists,
 			nil)
@@ -207,7 +226,7 @@ func (handler *ShopHandler) showLists(b *gotgbot.Bot, ctx *ext.Context) error {
 	case err != nil:
 		return fmt.Errorf("failed to get user lists: %w", err)
 	}
-	
+
 	// Если ошибок нет, обрабатываем список
 	logger.Sugar.Debugw("user lists", "listNames", listNames)
 
@@ -467,9 +486,18 @@ func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	itemName := ctx.EffectiveMessage.Text
 	userID := ctx.EffectiveUser.Id
 	// currentList := handler.Client.getCurrentList(ctx)
-	currentList, err := handler.Service.GetCurrentList(userID) 
+	currentList, err := handler.Service.GetCurrentList(userID)
 	if err != nil {
-		return fmt.Errorf("failed to get current list name")
+		if err == repository.ErrNoState {
+			_, sendErr := ctx.EffectiveMessage.Reply(b, "Сначала создайте список покупок", &gotgbot.SendMessageOpts{
+				ReplyMarkup: getMainMenueKeyboard(),
+			})
+			if sendErr != nil {
+				return fmt.Errorf("failed to send error message: %w", sendErr)
+			}
+			return handlers.EndConversation()
+		}
+		return fmt.Errorf("failed to get current list name: %w", err)
 	}
 
 	logger.Sugar.Debugw("get current list from state:", "current_list", currentList)
@@ -488,9 +516,18 @@ func (handler *ShopHandler) addItem(b *gotgbot.Bot, ctx *ext.Context) error {
 func (handler *ShopHandler) finishAddItem(b *gotgbot.Bot, ctx *ext.Context) error {
 	logger.Sugar.Debugw("finishAddItem handler")
 	// listName := handler.Client.getCurrentList(ctx)
-	userID:= ctx.EffectiveUser.Id
+	userID := ctx.EffectiveUser.Id
 	currentList, err := handler.Service.GetCurrentList(userID)
 	if err != nil {
+		if err == repository.ErrNoState {
+			_, sendErr := ctx.EffectiveMessage.Reply(b, "Сначала создайте список покупок", &gotgbot.SendMessageOpts{
+				ReplyMarkup: getMainMenueKeyboard(),
+			})
+			if sendErr != nil {
+				return fmt.Errorf("failed to send error message: %w", sendErr)
+			}
+			return handlers.EndConversation()
+		}
 		return fmt.Errorf("failed to get current list name: %w", err)
 	}
 	// listItems, err := handler.Client.getListItems(ctx, listName)
